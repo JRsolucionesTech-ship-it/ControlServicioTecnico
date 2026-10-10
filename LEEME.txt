@@ -1,0 +1,35 @@
+Registro de reparaciones — instalable en Android
+=====================================
+
+Esta carpeta es una PWA: una página que se instala como app, con su ícono,
+y que funciona sin internet después de la primera vez que se abre.
+
+OPCIÓN A — Instalar como app (sin APK)
+1. Sube todo el contenido de esta carpeta a un hosting con HTTPS.
+   Gratis y sencillo: GitHub Pages.
+   - Crea un repositorio en github.com y sube los 6 archivos.
+   - En Settings > Pages elige la rama main y la carpeta raíz.
+   - Te da un enlace como https://tu-usuario.github.io/nombre-del-repo/
+2. Abre ese enlace en Chrome del celular.
+3. Menú de los tres puntos > "Instalar app" (o "Añadir a la pantalla de inicio").
+4. Abre la app desde el ícono. Listo.
+
+OPCIÓN B — Convertirla en APK
+1. Primero haz la Opción A para tener el enlace https.
+2. Entra a https://www.pwabuilder.com y pega tu enlace.
+3. Elige Android y descarga el paquete. Para instalar directo en un celular
+   (sin Play Store) usa la opción que entrega un archivo .apk; las opciones
+   del sitio cambian, así que busca la de prueba o instalación directa.
+4. Pasa el .apk al celular y ábrelo. Android pedirá permiso para instalar
+   desde orígenes desconocidos.
+5. Guarda la llave de firma que te entregue el sitio: la necesitas para
+   futuras versiones.
+
+DATOS Y RESPALDOS
+- Todo se guarda en el propio celular. La app instalada como PWA y el APK
+  guardan datos por separado, así que usa los botones de respaldo
+  antes de cambiar de una a otra.
+
+PARA ACTUALIZAR
+- Cambia el texto de CACHE en sw.js (por ejemplo "reparaciones-v1" a "reparaciones-v1b")
+  cada vez que modifiques index.html, para que los celulares tomen la versión nueva.

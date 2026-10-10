@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b6e78">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Registro de reparaciones</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#e8edef; --panel:#f7f9fa; --ink:#13222c; --muted:#5a6b76; --line:#c6d0d6;
+  --accent:#0b6e78; --accent-ink:#ffffff; --bad:#b3261e;
+  --s-recibido:#5a6b76; --s-proceso:#0b6e78; --s-repuesto:#a96a00; --s-listo:#1c7a45; --s-entregado:#6b5aa8;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1a21; --panel:#172630; --ink:#e6eef2; --muted:#93a5b0; --line:#2b3d49;
+    --accent:#4cc3cf; --accent-ink:#06242a; --bad:#ff8a80;
+    --s-recibido:#93a5b0; --s-proceso:#4cc3cf; --s-repuesto:#f0b445; --s-listo:#6fd39a; --s-entregado:#b3a4ee;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1a21; --panel:#172630; --ink:#e6eef2; --muted:#93a5b0; --line:#2b3d49;
+  --accent:#4cc3cf; --accent-ink:#06242a; --bad:#ff8a80;
+  --s-recibido:#93a5b0; --s-proceso:#4cc3cf; --s-repuesto:#f0b445; --s-listo:#6fd39a; --s-entregado:#b3a4ee;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Barlow",system-ui,sans-serif}
+main{max-width:760px;margin:0 auto;padding:20px 16px 56px}
+h1{font:700 2rem/1.1 "Barlow Condensed",sans-serif;margin:8px 0 4px}
+.sub{color:var(--muted);margin:0 0 16px}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px}
+.stats div{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.stats b{display:block;font:700 1.6rem/1.1 "Barlow Condensed",sans-serif}
+.stats span{font-size:.82rem;color:var(--muted)}
+.bar{display:flex;gap:8px;margin-bottom:10px}
+.bar input{flex:1}
+input,select,textarea{width:100%;font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px;min-height:44px}
+textarea{min-height:76px;resize:vertical}
+:is(input,select,textarea,button):focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+button{font:inherit;font-weight:600;min-height:44px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 14px;cursor:pointer}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.danger{color:var(--bad)}
+.filters{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px}
+.filters button{min-height:40px;white-space:nowrap;font-weight:500}
+.filters button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.card{background:var(--panel);border:1px solid var(--line);border-left:6px solid var(--c,var(--line));border-radius:8px;padding:12px 14px;margin-bottom:10px}
+.card h3{margin:0;font:600 1.2rem/1.2 "Barlow Condensed",sans-serif}
+.row{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.badge{font-size:.82rem;font-weight:600;color:var(--c);white-space:nowrap}
+.meta{color:var(--muted);font-size:.9rem;margin:2px 0 6px}
+.card p{margin:4px 0}
+.money{display:flex;gap:14px;flex-wrap:wrap;font-size:.92rem;margin-top:6px}
+.money b{font-weight:600}
+.actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.actions button{min-height:40px;font-weight:500}
+.empty{text-align:center;color:var(--muted);padding:28px 8px;border:1px dashed var(--line);border-radius:8px}
+dialog{width:min(560px,calc(100% - 24px));max-height:calc(100% - 24px);overflow:auto;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:16px}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+dialog h2{font:700 1.5rem/1.1 "Barlow Condensed",sans-serif;margin:0 0 12px}
+label{display:block;font-weight:500;margin-bottom:10px}
+label span{display:block;font-size:.88rem;color:var(--muted);margin-bottom:3px;font-weight:400}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+@media (max-width:460px){.grid{grid-template-columns:1fr}.stats b{font-size:1.3rem}}
+.foot{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
+.tools{margin-top:22px;display:flex;gap:8px;flex-wrap:wrap}
+.tools button{font-weight:500}
+.msg{font-size:.9rem;color:var(--muted);margin-top:8px;min-height:1.4em}
+.check{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.check input{width:22px;height:22px;min-height:0;padding:0;flex:none}
+.check span{display:inline;margin:0;color:var(--ink);font-size:1rem}
+#receipt{display:none}
+@media print{
+  html,body{background:#fff!important}
+  :root{padding:0!important}
+  body>*:not(#receipt){display:none!important}
+  #receipt{display:block;color:#000;background:#fff;font:14px/1.45 "Barlow",Arial,sans-serif;padding:8mm;max-width:180mm;margin:0 auto}
+  #receipt h1{font:700 28px/1.1 "Barlow Condensed",Arial,sans-serif;margin:0}
+  #receipt h2{font:600 20px/1.2 "Barlow Condensed",Arial,sans-serif;margin:14px 0 4px;padding-bottom:6px;border-bottom:2px solid #000}
+  #receipt p{margin:4px 0}
+  #receipt table{width:100%;border-collapse:collapse;margin:10px 0}
+  #receipt td{padding:5px 6px;border-bottom:1px solid #999;vertical-align:top}
+  #receipt td:first-child{width:34%;font-weight:600}
+  #receipt .r-cost{width:60%;margin-left:auto}
+  #receipt .r-cost td:last-child{text-align:right}
+  #receipt .r-cost tr.r-total td{font-weight:700;font-size:16px;border-top:2px solid #000}
+  #receipt .r-sign{display:flex;justify-content:space-between;gap:30px;margin-top:56px}
+  #receipt .r-sign span{flex:1;border-top:1px solid #000;padding-top:4px;text-align:center;font-size:13px}
+}
+</style>
+</head>
+<body>
+<main>
+  <h1>Registro de reparaciones</h1>
+  <p class="sub">Equipos que recibes, en qué van y cuánto cobraste.</p>
+
+  <div class="stats">
+    <div><b id="stActive">0</b><span>En el taller</span></div>
+    <div><b id="stReady">0</b><span>Listos para entregar</span></div>
+    <div><b id="stMoney">$0</b><span>Cobrado este mes</span></div>
+    <div><b id="stDue">$0</b><span>Saldo por cobrar</span></div>
+  </div>
+
+  <div class="bar">
+    <input id="q" type="search" placeholder="Buscar por cliente, teléfono, equipo o número de orden" aria-label="Buscar">
+    <button id="newBtn" class="primary" type="button">Nuevo</button>
+  </div>
+  <div class="filters" id="filters" role="group" aria-label="Filtrar por estado"></div>
+  <div id="list"></div>
+
+  <div class="tools">
+    <button id="copyBtn" type="button">Copiar respaldo</button>
+    <button id="importBtn" type="button">Restaurar respaldo</button>
+  </div>
+  <label style="margin-top:16px"><span>Nombre del taller (sale en el recibo)</span><input id="bizName" autocomplete="off"></label>
+  <label><span>Teléfono del taller</span><input id="bizTel" type="tel" inputmode="tel"></label>
+  <label style="max-width:240px"><span>IVA para reparaciones nuevas (%)</span><input id="ivaInput" type="number" inputmode="decimal" min="0" max="100" step="any"></label>
+  <div class="msg" id="msg" role="status"></div>
+</main>
+
+<div id="receipt" aria-hidden="true"></div>
+
+<dialog id="dlg">
+  <h2 id="dlgTitle">Nueva reparación</h2>
+  <div class="grid">
+    <label><span>Cliente</span><input id="fCliente" autocomplete="off"></label>
+    <label><span>Teléfono</span><input id="fTel" type="tel" inputmode="tel"></label>
+  </div>
+  <div class="grid">
+    <label><span>Equipo (marca y modelo)</span><input id="fEquipo" autocomplete="off"></label>
+    <label><span>Estado</span><select id="fEstado"></select></label>
+  </div>
+  <label><span>Falla reportada</span><textarea id="fFalla"></textarea></label>
+  <label><span>Diagnóstico y trabajo realizado</span><textarea id="fNotas"></textarea></label>
+  <label><span>Repuestos usados</span><input id="fRepuestos" autocomplete="off"></label>
+  <div class="grid">
+    <label><span>Costo de repuestos (USD)</span><input id="fCostoRep" type="number" inputmode="decimal" min="0" step="any"></label>
+    <label><span>Mano de obra (USD)</span><input id="fMano" type="number" inputmode="decimal" min="0" step="any"></label>
+  </div>
+  <div class="grid">
+    <label><span>Abono recibido (USD)</span><input id="fAbono" type="number" inputmode="decimal" min="0" step="any"></label>
+    <label><span>Garantía (días)</span><input id="fGarantia" type="number" inputmode="numeric" min="0" step="1"></label>
+  </div>
+  <label><span>Accesorios que dejó el cliente (cargador, cables, bolso)</span><input id="fAccesorios" autocomplete="off"></label>
+  <label class="check"><input id="fIva" type="checkbox"><span>Cobrar IVA en esta reparación</span></label>
+  <div class="foot">
+    <button id="cancelBtn" type="button">Cancelar</button>
+    <button id="saveBtn" class="primary" type="button">Guardar</button>
+  </div>
+</dialog>
+
+<dialog id="dlgImport">
+  <h2>Restaurar respaldo</h2>
+  <label><span>Pega aquí el respaldo copiado antes (reemplaza los datos actuales)</span><textarea id="importTxt" style="min-height:140px"></textarea></label>
+  <div class="foot">
+    <button id="impCancel" type="button">Cancelar</button>
+    <button id="impOk" class="primary" type="button">Restaurar</button>
+  </div>
+</dialog>
+
+<script>
+const $ = id => document.getElementById(id);
+const ESTADOS = [
+  {k:"recibido", t:"Recibido", c:"var(--s-recibido)"},
+  {k:"proceso", t:"En proceso", c:"var(--s-proceso)"},
+  {k:"repuesto", t:"Esperando repuesto", c:"var(--s-repuesto)"},
+  {k:"listo", t:"Listo", c:"var(--s-listo)"},
+  {k:"entregado", t:"Entregado", c:"var(--s-entregado)"}
+];
+const KEY = "reparaciones-v1";
+let items = [], filter = "activos", editingId = null, storageOK = true;
+
+function load(){
+  try { const r = localStorage.getItem(KEY+"-iva"); if(r!==null && isFinite(parseFloat(r))) ivaRate = parseFloat(r); } catch(e){}
+  try { const raw = localStorage.getItem(KEY); items = raw ? JSON.parse(raw) : []; if(!Array.isArray(items)) items = []; }
+  catch(e){ storageOK = false; items = []; }
+}
+function save(){
+  try { localStorage.setItem(KEY, JSON.stringify(items)); }
+  catch(e){ storageOK = false; $("msg").textContent = "No se pudo guardar en este navegador. Copia un respaldo para no perder los datos."; }
+}
+const money = n => "$" + (Math.round((n||0)*100)/100).toLocaleString("es-VE",{minimumFractionDigits:0,maximumFractionDigits:2});
+const est = k => ESTADOS.find(e => e.k===k) || ESTADOS[0];
+let ivaRate = 15;
+function totals(it){
+  const sub = (it.mano||0)+(it.costoRep||0);
+  const pct = it.iva ? (it.ivaPct!==undefined ? it.ivaPct : ivaRate) : 0;
+  const iva = Math.round(sub*pct)/100;
+  const total = sub + iva;
+  return {sub, pct, iva, total, saldo: Math.max(0, total-(it.abono||0))};
+}
+async function copyQuote(it){
+  const t = totals(it);
+  const L = ["*Cotización de reparación*", "Cliente: "+(it.cliente||"-"), "Equipo: "+(it.equipo||"-")];
+  if(it.falla) L.push("Falla: "+it.falla);
+  if(it.notas) L.push("Trabajo: "+it.notas);
+  if(it.repuestos) L.push("Repuestos usados: "+it.repuestos);
+  L.push("", "Repuestos: "+money(it.costoRep), "Mano de obra: "+money(it.mano));
+  if(it.iva) L.push("IVA "+t.pct+"%: "+money(t.iva));
+  L.push("*Total: "+money(t.total)+"*");
+  if(it.abono) L.push("Abono: "+money(it.abono), "Saldo: "+money(t.saldo));
+  if(it.garantia) L.push("Garantía: "+it.garantia+" días");
+  const txt = L.join("\n");
+  try { await navigator.clipboard.writeText(txt); $("msg").textContent = "Cotización copiada. Pégala en WhatsApp."; }
+  catch(e){ $("importTxt").value = txt; $("dlgImport").showModal(); $("importTxt").select(); $("msg").textContent = "Copia el texto manualmente."; }
+}
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const ord = n => "N.º " + String(n||0).padStart(4,"0");
+let biz = {name:"", tel:""};
+function nextOrden(){
+  let last = 0;
+  try { last = parseInt(localStorage.getItem(KEY+"-orden")) || 0; } catch(e){}
+  const n = Math.max(last, ...items.map(i=>i.orden||0)) + 1;
+  try { localStorage.setItem(KEY+"-orden", String(n)); } catch(e){}
+  return n;
+}
+function fixOrdenes(){
+  let n = Math.max(0, ...items.map(i=>i.orden||0)), changed = false;
+  items.filter(i=>!i.orden).sort((a,b)=>a.fecha.localeCompare(b.fecha)).forEach(i => { i.orden = ++n; changed = true; });
+  if(changed) save();
+}
+function loadBiz(){
+  try { biz = JSON.parse(localStorage.getItem(KEY+"-biz")) || biz; } catch(e){}
+  $("bizName").value = biz.name||""; $("bizTel").value = biz.tel||"";
+}
+function saveBiz(){
+  biz = {name:$("bizName").value.trim(), tel:$("bizTel").value.trim()};
+  try { localStorage.setItem(KEY+"-biz", JSON.stringify(biz)); } catch(e){}
+}
+function printReceipt(it){
+  const t = totals(it), r = $("receipt"); r.innerHTML = "";
+  const add = (tag, cls, txt) => { const e = el(tag, cls, txt); r.appendChild(e); return e; };
+  add("h1","", biz.name || "Recibo de reparación");
+  if(biz.tel) add("p","", "Tel. " + biz.tel);
+  add("h2","", "Recibo de reparación " + ord(it.orden));
+  add("p","", "Fecha de ingreso: " + new Date(it.fecha).toLocaleDateString("es-EC",{day:"2-digit",month:"long",year:"numeric"}) + " · Estado: " + est(it.estado).t);
+  const info = [["Cliente",it.cliente],["Teléfono",it.tel],["Equipo",it.equipo],["Accesorios recibidos",it.accesorios],["Falla reportada",it.falla],["Trabajo realizado",it.notas],["Repuestos usados",it.repuestos]].filter(x => x[1]);
+  const tb = document.createElement("table");
+  info.forEach(([k,v]) => { const tr = tb.insertRow(); tr.insertCell().textContent = k; tr.insertCell().textContent = v; });
+  r.appendChild(tb);
+  const rows = [["Repuestos",money(it.costoRep)],["Mano de obra",money(it.mano)]];
+  if(it.iva) rows.push(["IVA "+t.pct+"%", money(t.iva)]);
+  rows.push(["Total", money(t.total), true]);
+  if(it.abono){ rows.push(["Abono", money(it.abono)]); rows.push(["Saldo pendiente", money(t.saldo)]); }
+  const tc = document.createElement("table"); tc.className = "r-cost";
+  rows.forEach(([k,v,strong]) => { const tr = tc.insertRow(); if(strong) tr.className = "r-total"; tr.insertCell().textContent = k; tr.insertCell().textContent = v; });
+  r.appendChild(tc);
+  if(it.garantia) add("p","", "Garantía: " + it.garantia + " días desde la entrega.");
+  const sg = add("div","r-sign"); sg.appendChild(el("span","","Firma del cliente")); sg.appendChild(el("span","","Firma del técnico"));
+  $("msg").textContent = "Abriendo la impresión. Si no aparece, usa Copiar cotización o abre esta página directamente en tu navegador.";
+  setTimeout(() => { try { window.print(); } catch(e){} }, 80);
+}
+const fdate = iso => new Date(iso).toLocaleDateString("es-VE",{day:"2-digit",month:"short"});
+
+function buildFilters(){
+  const opts = [{k:"activos",t:"Activos"},{k:"todos",t:"Todos"}].concat(ESTADOS.map(e=>({k:e.k,t:e.t})));
+  $("filters").innerHTML = "";
+  opts.forEach(o => {
+    const b = document.createElement("button"); b.type="button"; b.textContent = o.t;
+    b.setAttribute("aria-pressed", filter===o.k);
+    b.onclick = () => { filter = o.k; buildFilters(); render(); };
+    $("filters").appendChild(b);
+  });
+}
+function matches(it){
+  const q = $("q").value.trim().toLowerCase();
+  if(!q){
+    if(filter==="activos" && it.estado==="entregado") return false;
+    if(filter!=="activos" && filter!=="todos" && it.estado!==filter) return false;
+  }
+  if(!q) return true;
+  return [ord(it.orden),String(it.orden),it.cliente,it.equipo,it.falla,it.notas,it.repuestos,it.tel,it.accesorios].join(" ").toLowerCase().includes(q);
+}
+function el(tag, cls, text){ const e = document.createElement(tag); if(cls) e.className = cls; if(text!==undefined) e.textContent = text; return e; }
+
+function render(){
+  const month = new Date().toISOString().slice(0,7);
+  $("stActive").textContent = items.filter(i=>i.estado!=="entregado").length;
+  $("stReady").textContent = items.filter(i=>i.estado==="listo").length;
+  $("stMoney").textContent = money(items.filter(i=>i.estado==="entregado" && (i.entregado||"").startsWith(month)).reduce((s,i)=>s+totals(i).total,0));
+  $("stDue").textContent = money(items.filter(i=>i.estado!=="entregado").reduce((s,i)=>s+totals(i).saldo,0));
+
+  const list = $("list"); list.innerHTML = "";
+  const shown = items.filter(matches).sort((a,b)=> b.fecha.localeCompare(a.fecha));
+  if(!shown.length){
+    list.appendChild(el("div","empty", items.length ? "Nada coincide con la búsqueda o el filtro." : "Aún no hay reparaciones. Toca Nuevo para registrar la primera."));
+    return;
+  }
+  shown.forEach(it => {
+    const e = est(it.estado), card = el("div","card"); card.style.setProperty("--c", e.c);
+    const top = el("div","row");
+    top.append(el("h3","",it.equipo || "Equipo sin nombre"), el("span","badge",e.t));
+    card.appendChild(top);
+    card.appendChild(el("div","meta", ord(it.orden) + " · " + (it.cliente||"Sin cliente") + (it.tel ? " · " + it.tel : "") + " · " + fdate(it.fecha)));
+    if(it.falla) card.appendChild(el("p","","Falla: " + it.falla));
+    if(it.notas) card.appendChild(el("p","","Trabajo: " + it.notas));
+    if(it.repuestos) card.appendChild(el("p","","Repuestos: " + it.repuestos));
+    if(it.accesorios) card.appendChild(el("p","","Dejó: " + it.accesorios));
+    if(it.garantia) card.appendChild(el("p","","Garantía: " + it.garantia + " días"));
+    const m = el("div","money");
+    const t = totals(it);
+    const rows = [["Repuestos",it.costoRep],["Mano de obra",it.mano]];
+    if(it.iva) rows.push(["IVA "+t.pct+"%",t.iva]);
+    rows.push(["Total",t.total]);
+    if(it.abono){ rows.push(["Abono",it.abono]); rows.push(["Saldo",t.saldo]); }
+    rows.forEach(([l,v]) => { const s = el("span"); s.append(l+": "); s.appendChild(el("b","",money(v))); m.appendChild(s); });
+    card.appendChild(m);
+    const act = el("div","actions");
+    const idx = ESTADOS.findIndex(x=>x.k===it.estado);
+    if(idx < ESTADOS.length-1){
+      const nb = el("button","primary","Pasar a " + ESTADOS[idx+1].t.toLowerCase()); nb.type="button";
+      nb.onclick = () => { it.estado = ESTADOS[idx+1].k; if(it.estado==="entregado") it.entregado = new Date().toISOString(); save(); render(); };
+      act.appendChild(nb);
+    }
+    const qb = el("button","","Copiar cotización"); qb.type="button"; qb.onclick = () => copyQuote(it);
+    const pb = el("button","","Imprimir recibo"); pb.type="button"; pb.onclick = () => printReceipt(it);
+    const hb = el("button","","Ver historial"); hb.type="button";
+    hb.onclick = () => { $("q").value = it.tel || it.cliente || ""; render(); window.scrollTo(0,0); };
+    const eb = el("button","","Editar"); eb.type="button"; eb.onclick = () => openForm(it.id);
+    const db = el("button","danger","Eliminar"); db.type="button";
+    db.onclick = () => { if(db.dataset.sure){ items = items.filter(x=>x.id!==it.id); save(); render(); } else { db.dataset.sure = 1; db.textContent = "Confirmar eliminar"; setTimeout(()=>{ delete db.dataset.sure; db.textContent = "Eliminar"; },3000); } };
+    act.append(pb, qb, hb, eb, db); card.appendChild(act);
+    list.appendChild(card);
+  });
+}
+
+function openForm(id){
+  editingId = id || null;
+  const it = id ? items.find(x=>x.id===id) : {estado:"recibido"};
+  $("dlgTitle").textContent = id ? "Editar reparación" : "Nueva reparación";
+  $("fCliente").value = it.cliente||""; $("fTel").value = it.tel||""; $("fEquipo").value = it.equipo||"";
+  $("fEstado").value = it.estado; $("fFalla").value = it.falla||""; $("fNotas").value = it.notas||"";
+  $("fRepuestos").value = it.repuestos||""; $("fCostoRep").value = it.costoRep||""; $("fMano").value = it.mano||"";
+  $("fAbono").value = it.abono||""; $("fGarantia").value = it.garantia||""; $("fAccesorios").value = it.accesorios||""; $("fIva").checked = !!it.iva;
+  $("dlg").showModal();
+}
+function saveForm(){
+  const data = {
+    cliente:$("fCliente").value.trim(), tel:$("fTel").value.trim(), equipo:$("fEquipo").value.trim(),
+    estado:$("fEstado").value, falla:$("fFalla").value.trim(), notas:$("fNotas").value.trim(),
+    repuestos:$("fRepuestos").value.trim(), costoRep:parseFloat($("fCostoRep").value)||0, mano:parseFloat($("fMano").value)||0,
+    abono:parseFloat($("fAbono").value)||0, garantia:parseInt($("fGarantia").value)||0, accesorios:$("fAccesorios").value.trim(),
+    iva:$("fIva").checked
+  };
+  const prev = editingId ? items.find(x=>x.id===editingId) : null;
+  data.ivaPct = (prev && prev.ivaPct!==undefined) ? prev.ivaPct : ivaRate;
+  if(!data.equipo && !data.cliente){ $("fEquipo").focus(); return; }
+  if(editingId){
+    const it = items.find(x=>x.id===editingId);
+    const was = it.estado; Object.assign(it, data);
+    if(data.estado==="entregado" && was!=="entregado") it.entregado = new Date().toISOString();
+    if(data.estado!=="entregado") delete it.entregado;
+  } else {
+    const it = Object.assign({id:uid(), orden:nextOrden(), fecha:new Date().toISOString()}, data);
+    if(it.estado==="entregado") it.entregado = it.fecha;
+    items.push(it);
+  }
+  save(); $("dlg").close(); render();
+}
+
+ESTADOS.forEach(e => { const o = document.createElement("option"); o.value = e.k; o.textContent = e.t; $("fEstado").appendChild(o); });
+$("newBtn").onclick = () => openForm();
+$("saveBtn").onclick = saveForm;
+$("cancelBtn").onclick = () => $("dlg").close();
+$("q").oninput = render;
+$("copyBtn").onclick = async () => {
+  const txt = JSON.stringify(items);
+  try { await navigator.clipboard.writeText(txt); $("msg").textContent = "Respaldo copiado. Pégalo en tus notas o envíatelo por mensaje."; }
+  catch(e){ $("importTxt").value = txt; $("dlgImport").showModal(); $("importTxt").select(); $("msg").textContent = "Copia el texto manualmente."; }
+};
+$("importBtn").onclick = () => { $("importTxt").value = ""; $("dlgImport").showModal(); };
+$("impCancel").onclick = () => $("dlgImport").close();
+$("impOk").onclick = () => {
+  try {
+    const arr = JSON.parse($("importTxt").value);
+    if(!Array.isArray(arr)) throw 0;
+    items = arr.filter(x => x && typeof x==="object" && x.id && x.fecha); fixOrdenes();
+    save(); $("dlgImport").close(); render(); $("msg").textContent = "Respaldo restaurado: " + items.length + " registros.";
+  } catch(e){ $("msg").textContent = "Ese texto no es un respaldo válido."; }
+};
+load(); fixOrdenes(); loadBiz(); buildFilters(); render();
+$("bizName").oninput = saveBiz; $("bizTel").oninput = saveBiz;
+$("ivaInput").value = ivaRate;
+$("ivaInput").oninput = () => { ivaRate = parseFloat($("ivaInput").value)||0; try { localStorage.setItem(KEY+"-iva", String(ivaRate)); } catch(e){} };
+if(!storageOK) $("msg").textContent = "Este navegador no permite guardar datos. Copia un respaldo antes de salir.";
+</script>
+<script>
+if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}
+</script>
+</body>
+</html>
