@@ -18,19 +18,19 @@
   padding-top:env(safe-area-inset-top,0px);
   padding-bottom:env(safe-area-inset-bottom,0px);
   --bg:#e8edef; --panel:#f7f9fa; --ink:#13222c; --muted:#5a6b76; --line:#c6d0d6;
-  --accent:#0b6e78; --accent-ink:#ffffff; --bad:#b3261e;
+  --accent:#0b6e78; --accent-ink:#ffffff; --bad:#b3261e; --warn:#a96a00;
   --s-recibido:#5a6b76; --s-proceso:#0b6e78; --s-repuesto:#a96a00; --s-listo:#1c7a45; --s-entregado:#6b5aa8;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#0f1a21; --panel:#172630; --ink:#e6eef2; --muted:#93a5b0; --line:#2b3d49;
-    --accent:#4cc3cf; --accent-ink:#06242a; --bad:#ff8a80;
+    --accent:#4cc3cf; --accent-ink:#06242a; --bad:#ff8a80; --warn:#f0b445;
     --s-recibido:#93a5b0; --s-proceso:#4cc3cf; --s-repuesto:#f0b445; --s-listo:#6fd39a; --s-entregado:#b3a4ee;
   }
 }
 :root[data-theme="dark"]{
   --bg:#0f1a21; --panel:#172630; --ink:#e6eef2; --muted:#93a5b0; --line:#2b3d49;
-  --accent:#4cc3cf; --accent-ink:#06242a; --bad:#ff8a80;
+  --accent:#4cc3cf; --accent-ink:#06242a; --bad:#ff8a80; --warn:#f0b445;
   --s-recibido:#93a5b0; --s-proceso:#4cc3cf; --s-repuesto:#f0b445; --s-listo:#6fd39a; --s-entregado:#b3a4ee;
 }
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -38,16 +38,20 @@ html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Barlow",system-ui,sans-serif}
 main{max-width:760px;margin:0 auto;padding:20px 16px 56px}
 h1{font:700 2rem/1.1 "Barlow Condensed",sans-serif;margin:8px 0 4px}
+h3{font:600 1.15rem/1.2 "Barlow Condensed",sans-serif;margin:18px 0 8px}
 .sub{color:var(--muted);margin:0 0 16px}
 .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px}
 .stats div{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
 .stats b{display:block;font:700 1.6rem/1.1 "Barlow Condensed",sans-serif}
 .stats span{font-size:.82rem;color:var(--muted)}
+.alerts{display:grid;gap:6px;margin-bottom:14px}
+.alerts button{text-align:left;font-weight:500;min-height:44px;border-left:5px solid var(--warn);border-radius:6px}
+.alerts p{margin:0;font-size:.85rem;color:var(--muted)}
 .bar{display:flex;gap:8px;margin-bottom:10px}
-.bar input{flex:1}
+.bar input{flex:1;min-width:0}
 input,select,textarea{width:100%;font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px;min-height:44px}
 textarea{min-height:76px;resize:vertical}
-:is(input,select,textarea,button):focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+:is(input,select,textarea,button,summary):focus-visible{outline:3px solid var(--accent);outline-offset:1px}
 button{font:inherit;font-weight:600;min-height:44px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 14px;cursor:pointer}
 button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 button.danger{color:var(--bad)}
@@ -55,15 +59,23 @@ button.danger{color:var(--bad)}
 .filters button{min-height:40px;white-space:nowrap;font-weight:500}
 .filters button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .card{background:var(--panel);border:1px solid var(--line);border-left:6px solid var(--c,var(--line));border-radius:8px;padding:12px 14px;margin-bottom:10px}
-.card h3{margin:0;font:600 1.2rem/1.2 "Barlow Condensed",sans-serif}
+.card h3{margin:0;font-size:1.2rem}
 .row{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
 .badge{font-size:.82rem;font-weight:600;color:var(--c);white-space:nowrap}
 .meta{color:var(--muted);font-size:.9rem;margin:2px 0 6px}
 .card p{margin:4px 0}
+.late{color:var(--bad);font-weight:600}
 .money{display:flex;gap:14px;flex-wrap:wrap;font-size:.92rem;margin-top:6px}
 .money b{font-weight:600}
 .actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
 .actions button{min-height:40px;font-weight:500}
+.actions button.primary{font-weight:600}
+details.more{margin-top:8px}
+details.more summary{cursor:pointer;color:var(--muted);font-size:.92rem;min-height:36px;display:flex;align-items:center}
+.thumbs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 2px}
+.thumb{position:relative;width:64px;height:64px}
+.thumb img{width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid var(--line);cursor:pointer;display:block;background:var(--bg)}
+.thumb button{position:absolute;top:-8px;right:-8px;min-height:0;width:26px;height:26px;padding:0;border-radius:50%;line-height:1;font-size:.8rem}
 .empty{text-align:center;color:var(--muted);padding:28px 8px;border:1px dashed var(--line);border-radius:8px}
 dialog{width:min(560px,calc(100% - 24px));max-height:calc(100% - 24px);overflow:auto;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:16px}
 dialog::backdrop{background:rgba(0,0,0,.5)}
@@ -71,7 +83,7 @@ dialog h2{font:700 1.5rem/1.1 "Barlow Condensed",sans-serif;margin:0 0 12px}
 label{display:block;font-weight:500;margin-bottom:10px}
 label span{display:block;font-size:.88rem;color:var(--muted);margin-bottom:3px;font-weight:400}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
-@media (max-width:460px){.grid{grid-template-columns:1fr}.stats b{font-size:1.3rem}}
+@media (max-width:460px){.grid{grid-template-columns:1fr}}
 .foot{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
 .tools{margin-top:22px;display:flex;gap:8px;flex-wrap:wrap}
 .tools button{font-weight:500}
@@ -79,6 +91,15 @@ label span{display:block;font-size:.88rem;color:var(--muted);margin-bottom:3px;f
 .check{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .check input{width:22px;height:22px;min-height:0;padding:0;flex:none}
 .check span{display:inline;margin:0;color:var(--ink);font-size:1rem}
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.facts div{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.facts b{display:block;font:700 1.5rem/1.1 "Barlow Condensed",sans-serif}
+.facts span{font-size:.85rem;color:var(--muted)}
+.bars .b{display:grid;grid-template-columns:44px 1fr 74px;gap:8px;align-items:center;margin-bottom:6px;font-size:.9rem}
+.bars .track{background:var(--panel);border:1px solid var(--line);border-radius:4px;height:16px;overflow:hidden}
+.bars .fill{height:100%;background:var(--accent)}
+.bars .v{text-align:right;font-weight:600}
+.top{margin:0;padding-left:20px}
 #receipt{display:none}
 @media print{
   html,body{background:#fff!important}
@@ -111,18 +132,23 @@ label span{display:block;font-size:.88rem;color:var(--muted);margin-bottom:3px;f
     <div><b id="stDue">$0</b><span>Saldo por cobrar</span></div>
   </div>
 
+  <div class="alerts" id="alerts"></div>
+
   <div class="bar">
     <input id="q" type="search" placeholder="Buscar por cliente, teléfono, equipo o número de orden" aria-label="Buscar">
     <button id="newBtn" class="primary" type="button">Nuevo</button>
+    <button id="repBtn" type="button">Reportes</button>
   </div>
   <div class="filters" id="filters" role="group" aria-label="Filtrar por estado"></div>
   <div id="list"></div>
 
   <div class="tools">
-    <button id="copyBtn" type="button">Copiar respaldo</button>
+    <button id="exportBtn" type="button">Descargar respaldo</button>
     <button id="importBtn" type="button">Restaurar respaldo</button>
+    <button id="copyBtn" type="button">Copiar respaldo en texto</button>
   </div>
-  <label style="margin-top:16px"><span>Nombre del taller (sale en el recibo)</span><input id="bizName" autocomplete="off"></label>
+  <div class="msg" id="lastBk"></div>
+  <label style="margin-top:16px"><span>Nombre del taller (sale en el recibo y en los mensajes)</span><input id="bizName" autocomplete="off"></label>
   <label><span>Teléfono del taller</span><input id="bizTel" type="tel" inputmode="tel"></label>
   <label style="max-width:240px"><span>IVA para reparaciones nuevas (%)</span><input id="ivaInput" type="number" inputmode="decimal" min="0" max="100" step="any"></label>
   <div class="msg" id="msg" role="status"></div>
@@ -134,7 +160,7 @@ label span{display:block;font-size:.88rem;color:var(--muted);margin-bottom:3px;f
   <h2 id="dlgTitle">Nueva reparación</h2>
   <div class="grid">
     <label><span>Cliente</span><input id="fCliente" autocomplete="off"></label>
-    <label><span>Teléfono</span><input id="fTel" type="tel" inputmode="tel"></label>
+    <label><span>Teléfono (para WhatsApp)</span><input id="fTel" type="tel" inputmode="tel" placeholder="0991234567"></label>
   </div>
   <div class="grid">
     <label><span>Equipo (marca y modelo)</span><input id="fEquipo" autocomplete="off"></label>
@@ -151,8 +177,16 @@ label span{display:block;font-size:.88rem;color:var(--muted);margin-bottom:3px;f
     <label><span>Abono recibido (USD)</span><input id="fAbono" type="number" inputmode="decimal" min="0" step="any"></label>
     <label><span>Garantía (días)</span><input id="fGarantia" type="number" inputmode="numeric" min="0" step="1"></label>
   </div>
+  <label><span>Método de pago</span><select id="fPago"></select></label>
+  <label><span>Fecha estimada de entrega</span><input id="fFecha" type="date"></label>
   <label><span>Accesorios que dejó el cliente (cargador, cables, bolso)</span><input id="fAccesorios" autocomplete="off"></label>
   <label class="check"><input id="fIva" type="checkbox"><span>Cobrar IVA en esta reparación</span></label>
+  <div>
+    <span style="display:block;font-size:.88rem;color:var(--muted)">Fotos del equipo al recibirlo (máximo 4)</span>
+    <div class="thumbs" id="fFotos"></div>
+    <input id="fFotoInput" type="file" accept="image/*" multiple style="display:none">
+    <button id="fFotoBtn" type="button">Agregar fotos</button>
+  </div>
   <div class="foot">
     <button id="cancelBtn" type="button">Cancelar</button>
     <button id="saveBtn" class="primary" type="button">Guardar</button>
@@ -161,11 +195,25 @@ label span{display:block;font-size:.88rem;color:var(--muted);margin-bottom:3px;f
 
 <dialog id="dlgImport">
   <h2>Restaurar respaldo</h2>
-  <label><span>Pega aquí el respaldo copiado antes (reemplaza los datos actuales)</span><textarea id="importTxt" style="min-height:140px"></textarea></label>
+  <p style="margin-top:0;color:var(--muted)">Esto reemplaza los datos que tienes ahora.</p>
+  <label><span>Archivo de respaldo (.json)</span><input id="impFile" type="file" accept=".json,application/json"></label>
+  <label><span>O pega aquí un respaldo en texto</span><textarea id="importTxt" style="min-height:120px"></textarea></label>
   <div class="foot">
     <button id="impCancel" type="button">Cancelar</button>
     <button id="impOk" class="primary" type="button">Restaurar</button>
   </div>
+</dialog>
+
+<dialog id="dlgFoto">
+  <img id="bigFoto" alt="Foto del equipo" style="width:100%;border-radius:8px;display:block">
+  <div class="foot"><button id="fotoClose" type="button">Cerrar</button></div>
+</dialog>
+
+<dialog id="dlgRep">
+  <h2>Reportes</h2>
+  <label><span>Mes</span><select id="repMonth"></select></label>
+  <div id="repBody"></div>
+  <div class="foot"><button id="repClose" type="button">Cerrar</button></div>
 </dialog>
 
 <script>
@@ -177,46 +225,47 @@ const ESTADOS = [
   {k:"listo", t:"Listo", c:"var(--s-listo)"},
   {k:"entregado", t:"Entregado", c:"var(--s-entregado)"}
 ];
+const PAGOS = ["Efectivo","Transferencia","Tarjeta","Otro"];
 const KEY = "reparaciones-v1";
 let items = [], filter = "activos", editingId = null, storageOK = true;
+let ivaRate = 15, biz = {name:"", tel:""};
+let formFotos = [], addedFotos = [], removedFotos = [], formSaved = false;
 
+function el(tag, cls, text){ const e = document.createElement(tag); if(cls) e.className = cls; if(text!==undefined) e.textContent = text; return e; }
+const money = n => "$" + (Math.round((n||0)*100)/100).toLocaleString("es-EC",{minimumFractionDigits:0,maximumFractionDigits:2});
+const est = k => ESTADOS.find(e => e.k===k) || ESTADOS[0];
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const ord = n => "N.º " + String(n||0).padStart(4,"0");
+const fdate = iso => new Date(iso).toLocaleDateString("es-EC",{day:"2-digit",month:"short"});
+const fdateStr = s => new Date(s + "T00:00:00").toLocaleDateString("es-EC",{day:"2-digit",month:"short"});
+const pad = n => String(n).padStart(2,"0");
+const todayStr = () => { const d = new Date(); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); };
+const monthKey = iso => { const d = new Date(iso); return d.getFullYear()+"-"+pad(d.getMonth()+1); };
+const daysSince = iso => Math.floor((Date.now() - new Date(iso).getTime())/864e5);
+
+/* ---------- almacenamiento ---------- */
 function load(){
-  try { const r = localStorage.getItem(KEY+"-iva"); if(r!==null && isFinite(parseFloat(r))) ivaRate = parseFloat(r); } catch(e){}
   try { const raw = localStorage.getItem(KEY); items = raw ? JSON.parse(raw) : []; if(!Array.isArray(items)) items = []; }
   catch(e){ storageOK = false; items = []; }
+  try { const r = localStorage.getItem(KEY+"-iva"); if(r!==null && isFinite(parseFloat(r))) ivaRate = parseFloat(r); } catch(e){}
+  try { biz = JSON.parse(localStorage.getItem(KEY+"-biz")) || biz; } catch(e){}
 }
 function save(){
   try { localStorage.setItem(KEY, JSON.stringify(items)); }
-  catch(e){ storageOK = false; $("msg").textContent = "No se pudo guardar en este navegador. Copia un respaldo para no perder los datos."; }
+  catch(e){ storageOK = false; $("msg").textContent = "No se pudo guardar en este navegador. Descarga un respaldo para no perder los datos."; }
 }
-const money = n => "$" + (Math.round((n||0)*100)/100).toLocaleString("es-VE",{minimumFractionDigits:0,maximumFractionDigits:2});
-const est = k => ESTADOS.find(e => e.k===k) || ESTADOS[0];
-let ivaRate = 15;
-function totals(it){
-  const sub = (it.mano||0)+(it.costoRep||0);
-  const pct = it.iva ? (it.ivaPct!==undefined ? it.ivaPct : ivaRate) : 0;
-  const iva = Math.round(sub*pct)/100;
-  const total = sub + iva;
-  return {sub, pct, iva, total, saldo: Math.max(0, total-(it.abono||0))};
+function saveSettings(){
+  try { localStorage.setItem(KEY+"-iva", String(ivaRate)); localStorage.setItem(KEY+"-biz", JSON.stringify(biz)); } catch(e){}
 }
-async function copyQuote(it){
-  const t = totals(it);
-  const L = ["*Cotización de reparación*", "Cliente: "+(it.cliente||"-"), "Equipo: "+(it.equipo||"-")];
-  if(it.falla) L.push("Falla: "+it.falla);
-  if(it.notas) L.push("Trabajo: "+it.notas);
-  if(it.repuestos) L.push("Repuestos usados: "+it.repuestos);
-  L.push("", "Repuestos: "+money(it.costoRep), "Mano de obra: "+money(it.mano));
-  if(it.iva) L.push("IVA "+t.pct+"%: "+money(t.iva));
-  L.push("*Total: "+money(t.total)+"*");
-  if(it.abono) L.push("Abono: "+money(it.abono), "Saldo: "+money(t.saldo));
-  if(it.garantia) L.push("Garantía: "+it.garantia+" días");
-  const txt = L.join("\n");
-  try { await navigator.clipboard.writeText(txt); $("msg").textContent = "Cotización copiada. Pégala en WhatsApp."; }
-  catch(e){ $("importTxt").value = txt; $("dlgImport").showModal(); $("importTxt").select(); $("msg").textContent = "Copia el texto manualmente."; }
+const lastBackup = () => { try { return localStorage.getItem(KEY+"-bk") || ""; } catch(e){ return ""; } };
+function markBackup(){
+  try { localStorage.setItem(KEY+"-bk", new Date().toISOString()); } catch(e){}
+  showLastBk(); renderAlerts();
 }
-const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
-const ord = n => "N.º " + String(n||0).padStart(4,"0");
-let biz = {name:"", tel:""};
+function showLastBk(){
+  const b = lastBackup();
+  $("lastBk").textContent = b ? "Último respaldo: hace " + daysSince(b) + " días." : "Aún no has descargado ningún respaldo.";
+}
 function nextOrden(){
   let last = 0;
   try { last = parseInt(localStorage.getItem(KEY+"-orden")) || 0; } catch(e){}
@@ -229,14 +278,115 @@ function fixOrdenes(){
   items.filter(i=>!i.orden).sort((a,b)=>a.fecha.localeCompare(b.fecha)).forEach(i => { i.orden = ++n; changed = true; });
   if(changed) save();
 }
-function loadBiz(){
-  try { biz = JSON.parse(localStorage.getItem(KEY+"-biz")) || biz; } catch(e){}
-  $("bizName").value = biz.name||""; $("bizTel").value = biz.tel||"";
+
+/* ---------- fotos (IndexedDB) ---------- */
+let dbp = null;
+function db(){
+  if(dbp) return dbp;
+  dbp = new Promise((res, rej) => {
+    try {
+      const r = indexedDB.open("reparaciones-fotos", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("fotos");
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    } catch(e){ rej(e); }
+  });
+  return dbp;
 }
-function saveBiz(){
-  biz = {name:$("bizName").value.trim(), tel:$("bizTel").value.trim()};
-  try { localStorage.setItem(KEY+"-biz", JSON.stringify(biz)); } catch(e){}
+function tx(mode, fn){
+  return db().then(d => new Promise((res, rej) => {
+    const t = d.transaction("fotos", mode), req = fn(t.objectStore("fotos"));
+    t.oncomplete = () => res(req ? req.result : undefined);
+    t.onerror = () => rej(t.error);
+  }));
 }
+const putFoto = (id, data) => tx("readwrite", s => s.put(data, id));
+const getFoto = id => tx("readonly", s => s.get(id));
+const delFoto = id => tx("readwrite", s => s.delete(id)).catch(() => {});
+const clearFotos = () => tx("readwrite", s => s.clear());
+function allFotos(){
+  return db().then(d => new Promise((res, rej) => {
+    const out = {}, t = d.transaction("fotos", "readonly"), c = t.objectStore("fotos").openCursor();
+    c.onsuccess = () => { const cur = c.result; if(cur){ out[cur.key] = cur.value; cur.continue(); } };
+    t.oncomplete = () => res(out);
+    t.onerror = () => rej(t.error);
+  }));
+}
+function compress(file){
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const k = Math.min(1, 900/Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width*k); c.height = Math.round(img.height*k);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      res(c.toDataURL("image/jpeg", .65));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("imagen")); };
+    img.src = url;
+  });
+}
+function fillThumb(img, id){ getFoto(id).then(src => { if(src) img.src = src; else img.style.display = "none"; }).catch(() => { img.style.display = "none"; }); }
+function showBig(id){ getFoto(id).then(src => { if(src){ $("bigFoto").src = src; $("dlgFoto").showModal(); } }).catch(() => {}); }
+
+/* ---------- cálculos y textos ---------- */
+function totals(it){
+  const sub = (it.mano||0)+(it.costoRep||0);
+  const pct = it.iva ? (it.ivaPct!==undefined ? it.ivaPct : ivaRate) : 0;
+  const iva = Math.round(sub*pct)/100;
+  const total = sub + iva;
+  return {sub, pct, iva, total, saldo: Math.max(0, total-(it.abono||0))};
+}
+function quoteText(it){
+  const t = totals(it);
+  const L = ["*Cotización de reparación " + ord(it.orden) + "*", "Cliente: "+(it.cliente||"-"), "Equipo: "+(it.equipo||"-")];
+  if(it.falla) L.push("Falla: "+it.falla);
+  if(it.notas) L.push("Trabajo: "+it.notas);
+  if(it.repuestos) L.push("Repuestos usados: "+it.repuestos);
+  L.push("", "Repuestos: "+money(it.costoRep), "Mano de obra: "+money(it.mano));
+  if(it.iva) L.push("IVA "+t.pct+"%: "+money(t.iva));
+  L.push("*Total: "+money(t.total)+"*");
+  if(it.abono) L.push("Abono: "+money(it.abono), "Saldo: "+money(t.saldo));
+  if(it.garantia) L.push("Garantía: "+it.garantia+" días");
+  if(it.pago) L.push("Forma de pago: "+it.pago);
+  if(it.fechaEst) L.push("Entrega estimada: "+fdateStr(it.fechaEst));
+  if(biz.name) L.push("", biz.name);
+  return L.join("\n");
+}
+async function copyQuote(it){
+  const txt = quoteText(it);
+  try { await navigator.clipboard.writeText(txt); $("msg").textContent = "Cotización copiada. Pégala en WhatsApp."; }
+  catch(e){ $("importTxt").value = txt; $("dlgImport").showModal(); $("importTxt").select(); $("msg").textContent = "Copia el texto manualmente."; }
+}
+function waPhone(tel){
+  let d = (tel||"").replace(/\D/g,"");
+  if(!d) return "";
+  if(d.startsWith("00")) d = d.slice(2);
+  else if(d.startsWith("0")) d = "593" + d.slice(1);
+  else if(d.length===9 && d.startsWith("9")) d = "593" + d;
+  return d.length >= 10 ? d : "";
+}
+function waMessage(it){
+  const t = totals(it);
+  if(it.estado==="listo"){
+    let m = "Hola" + (it.cliente ? " " + it.cliente : "") + ", le escribimos de " + (biz.name || "el taller") + ". Su equipo " + (it.equipo || "") + " (" + ord(it.orden) + ") ya está listo para retirar.";
+    if(t.saldo > 0) m += " Saldo pendiente: " + money(t.saldo) + ".";
+    if(it.garantia) m += " Incluye garantía de " + it.garantia + " días.";
+    return m;
+  }
+  return quoteText(it);
+}
+function openWhatsApp(it){
+  const ph = waPhone(it.tel);
+  if(!ph){ $("msg").textContent = "Esta reparación no tiene un teléfono válido. Edítala y agrégalo."; return; }
+  const a = document.createElement("a");
+  a.href = "https://wa.me/" + ph + "?text=" + encodeURIComponent(waMessage(it));
+  a.target = "_blank"; a.rel = "noopener";
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+/* ---------- recibo ---------- */
 function printReceipt(it){
   const t = totals(it), r = $("receipt"); r.innerHTML = "";
   const add = (tag, cls, txt) => { const e = el(tag, cls, txt); r.appendChild(e); return e; };
@@ -244,7 +394,7 @@ function printReceipt(it){
   if(biz.tel) add("p","", "Tel. " + biz.tel);
   add("h2","", "Recibo de reparación " + ord(it.orden));
   add("p","", "Fecha de ingreso: " + new Date(it.fecha).toLocaleDateString("es-EC",{day:"2-digit",month:"long",year:"numeric"}) + " · Estado: " + est(it.estado).t);
-  const info = [["Cliente",it.cliente],["Teléfono",it.tel],["Equipo",it.equipo],["Accesorios recibidos",it.accesorios],["Falla reportada",it.falla],["Trabajo realizado",it.notas],["Repuestos usados",it.repuestos]].filter(x => x[1]);
+  const info = [["Cliente",it.cliente],["Teléfono",it.tel],["Equipo",it.equipo],["Accesorios recibidos",it.accesorios],["Falla reportada",it.falla],["Trabajo realizado",it.notas],["Repuestos usados",it.repuestos],["Entrega estimada",it.fechaEst ? fdateStr(it.fechaEst) : ""],["Forma de pago",it.pago]].filter(x => x[1]);
   const tb = document.createElement("table");
   info.forEach(([k,v]) => { const tr = tb.insertRow(); tr.insertCell().textContent = k; tr.insertCell().textContent = v; });
   r.appendChild(tb);
@@ -260,13 +410,42 @@ function printReceipt(it){
   $("msg").textContent = "Abriendo la impresión. Si no aparece, usa Copiar cotización o abre esta página directamente en tu navegador.";
   setTimeout(() => { try { window.print(); } catch(e){} }, 80);
 }
-const fdate = iso => new Date(iso).toLocaleDateString("es-VE",{day:"2-digit",month:"short"});
 
+/* ---------- avisos ---------- */
+function renderAlerts(){
+  const box = $("alerts"); box.innerHTML = "";
+  const rows = [], today = todayStr(), now = Date.now();
+  items.forEach(it => {
+    const name = ord(it.orden) + " · " + (it.equipo || "Equipo");
+    if(it.estado==="listo"){
+      const d = daysSince(it.listoEn || it.fecha);
+      if(d >= 3) rows.push([name + " lleva " + d + " días listo sin retirar", ord(it.orden)]);
+    } else if(it.estado!=="entregado" && it.fechaEst && it.fechaEst < today){
+      rows.push([name + " pasó su fecha estimada (" + fdateStr(it.fechaEst) + ")", ord(it.orden)]);
+    }
+    if(it.estado==="entregado" && it.garantia && it.entregado){
+      const left = Math.ceil((new Date(it.entregado).getTime() + it.garantia*864e5 - now)/864e5);
+      if(left >= 0 && left <= 7) rows.push([name + ": la garantía vence " + (left===0 ? "hoy" : "en " + left + " días"), ord(it.orden)]);
+    }
+  });
+  if(items.length){
+    const b = lastBackup(), d = b ? daysSince(b) : null;
+    if(d===null || d >= 7) rows.push([d===null ? "Aún no has descargado un respaldo. Toca aquí para hacerlo." : "Hace " + d + " días que no haces un respaldo. Toca aquí.", "__backup"]);
+  }
+  rows.slice(0,6).forEach(([text, act]) => {
+    const b = el("button","",text); b.type = "button";
+    b.onclick = () => { if(act==="__backup") exportFile(); else { $("q").value = act; render(); window.scrollTo(0,0); } };
+    box.appendChild(b);
+  });
+  if(rows.length > 6) box.appendChild(el("p","","+" + (rows.length-6) + " avisos más"));
+}
+
+/* ---------- lista ---------- */
 function buildFilters(){
   const opts = [{k:"activos",t:"Activos"},{k:"todos",t:"Todos"}].concat(ESTADOS.map(e=>({k:e.k,t:e.t})));
   $("filters").innerHTML = "";
   opts.forEach(o => {
-    const b = document.createElement("button"); b.type="button"; b.textContent = o.t;
+    const b = el("button","",o.t); b.type = "button";
     b.setAttribute("aria-pressed", filter===o.k);
     b.onclick = () => { filter = o.k; buildFilters(); render(); };
     $("filters").appendChild(b);
@@ -277,18 +456,23 @@ function matches(it){
   if(!q){
     if(filter==="activos" && it.estado==="entregado") return false;
     if(filter!=="activos" && filter!=="todos" && it.estado!==filter) return false;
+    return true;
   }
-  if(!q) return true;
   return [ord(it.orden),String(it.orden),it.cliente,it.equipo,it.falla,it.notas,it.repuestos,it.tel,it.accesorios].join(" ").toLowerCase().includes(q);
 }
-function el(tag, cls, text){ const e = document.createElement(tag); if(cls) e.className = cls; if(text!==undefined) e.textContent = text; return e; }
-
+function setEstado(it, k){
+  const was = it.estado; it.estado = k;
+  if(k==="entregado" && was!=="entregado") it.entregado = new Date().toISOString();
+  if(k!=="entregado") delete it.entregado;
+  if(k==="listo" && was!=="listo") it.listoEn = new Date().toISOString();
+}
 function render(){
-  const month = new Date().toISOString().slice(0,7);
+  const month = monthKey(new Date().toISOString());
   $("stActive").textContent = items.filter(i=>i.estado!=="entregado").length;
   $("stReady").textContent = items.filter(i=>i.estado==="listo").length;
-  $("stMoney").textContent = money(items.filter(i=>i.estado==="entregado" && (i.entregado||"").startsWith(month)).reduce((s,i)=>s+totals(i).total,0));
+  $("stMoney").textContent = money(items.filter(i=>i.estado==="entregado" && i.entregado && monthKey(i.entregado)===month).reduce((s,i)=>s+totals(i).total,0));
   $("stDue").textContent = money(items.filter(i=>i.estado!=="entregado").reduce((s,i)=>s+totals(i).saldo,0));
+  renderAlerts();
 
   const list = $("list"); list.innerHTML = "";
   const shown = items.filter(matches).sort((a,b)=> b.fecha.localeCompare(a.fecha));
@@ -306,93 +490,238 @@ function render(){
     if(it.notas) card.appendChild(el("p","","Trabajo: " + it.notas));
     if(it.repuestos) card.appendChild(el("p","","Repuestos: " + it.repuestos));
     if(it.accesorios) card.appendChild(el("p","","Dejó: " + it.accesorios));
+    if(it.fechaEst && it.estado!=="entregado"){
+      card.appendChild(el("p", it.fechaEst < todayStr() && it.estado!=="listo" ? "late" : "", "Entrega estimada: " + fdateStr(it.fechaEst)));
+    }
     if(it.garantia) card.appendChild(el("p","","Garantía: " + it.garantia + " días"));
-    const m = el("div","money");
+    if(it.pago) card.appendChild(el("p","","Forma de pago: " + it.pago));
+    if(it.fotos && it.fotos.length){
+      const th = el("div","thumbs");
+      it.fotos.forEach(id => { const wrap = el("div","thumb"), img = document.createElement("img"); img.alt = "Foto del equipo"; img.onclick = () => showBig(id); fillThumb(img, id); wrap.appendChild(img); th.appendChild(wrap); });
+      card.appendChild(th);
+    }
     const t = totals(it);
     const rows = [["Repuestos",it.costoRep],["Mano de obra",it.mano]];
     if(it.iva) rows.push(["IVA "+t.pct+"%",t.iva]);
     rows.push(["Total",t.total]);
     if(it.abono){ rows.push(["Abono",it.abono]); rows.push(["Saldo",t.saldo]); }
+    const m = el("div","money");
     rows.forEach(([l,v]) => { const s = el("span"); s.append(l+": "); s.appendChild(el("b","",money(v))); m.appendChild(s); });
     card.appendChild(m);
+
     const act = el("div","actions");
     const idx = ESTADOS.findIndex(x=>x.k===it.estado);
     if(idx < ESTADOS.length-1){
-      const nb = el("button","primary","Pasar a " + ESTADOS[idx+1].t.toLowerCase()); nb.type="button";
-      nb.onclick = () => { it.estado = ESTADOS[idx+1].k; if(it.estado==="entregado") it.entregado = new Date().toISOString(); save(); render(); };
+      const nb = el("button","primary","Pasar a " + ESTADOS[idx+1].t.toLowerCase()); nb.type = "button";
+      nb.onclick = () => { setEstado(it, ESTADOS[idx+1].k); save(); render(); };
       act.appendChild(nb);
     }
-    const qb = el("button","","Copiar cotización"); qb.type="button"; qb.onclick = () => copyQuote(it);
-    const pb = el("button","","Imprimir recibo"); pb.type="button"; pb.onclick = () => printReceipt(it);
-    const hb = el("button","","Ver historial"); hb.type="button";
+    const wb = el("button","","WhatsApp"); wb.type = "button"; wb.onclick = () => openWhatsApp(it);
+    const pb = el("button","","Imprimir recibo"); pb.type = "button"; pb.onclick = () => printReceipt(it);
+    const eb = el("button","","Editar"); eb.type = "button"; eb.onclick = () => openForm(it.id);
+    act.append(wb, pb, eb);
+    card.appendChild(act);
+
+    const more = document.createElement("details"); more.className = "more";
+    more.appendChild(el("summary","","Más opciones"));
+    const act2 = el("div","actions");
+    const qb = el("button","","Copiar cotización"); qb.type = "button"; qb.onclick = () => copyQuote(it);
+    const hb = el("button","","Ver historial del cliente"); hb.type = "button";
     hb.onclick = () => { $("q").value = it.tel || it.cliente || ""; render(); window.scrollTo(0,0); };
-    const eb = el("button","","Editar"); eb.type="button"; eb.onclick = () => openForm(it.id);
-    const db = el("button","danger","Eliminar"); db.type="button";
-    db.onclick = () => { if(db.dataset.sure){ items = items.filter(x=>x.id!==it.id); save(); render(); } else { db.dataset.sure = 1; db.textContent = "Confirmar eliminar"; setTimeout(()=>{ delete db.dataset.sure; db.textContent = "Eliminar"; },3000); } };
-    act.append(pb, qb, hb, eb, db); card.appendChild(act);
+    const db_ = el("button","danger","Eliminar"); db_.type = "button";
+    db_.onclick = () => {
+      if(db_.dataset.sure){ (it.fotos||[]).forEach(delFoto); items = items.filter(x=>x.id!==it.id); save(); render(); }
+      else { db_.dataset.sure = 1; db_.textContent = "Confirmar eliminar"; setTimeout(()=>{ delete db_.dataset.sure; db_.textContent = "Eliminar"; },3000); }
+    };
+    act2.append(qb, hb, db_); more.appendChild(act2); card.appendChild(more);
     list.appendChild(card);
   });
 }
 
+/* ---------- formulario ---------- */
+function renderFormFotos(){
+  const box = $("fFotos"); box.innerHTML = "";
+  formFotos.forEach(id => {
+    const wrap = el("div","thumb"), img = document.createElement("img"); img.alt = "Foto del equipo"; img.onclick = () => showBig(id); fillThumb(img, id);
+    const x = el("button","danger","✕"); x.type = "button"; x.setAttribute("aria-label","Quitar foto");
+    x.onclick = () => {
+      formFotos = formFotos.filter(f => f!==id);
+      if(addedFotos.includes(id)){ addedFotos = addedFotos.filter(f => f!==id); delFoto(id); } else removedFotos.push(id);
+      renderFormFotos();
+    };
+    wrap.append(img, x); box.appendChild(wrap);
+  });
+  $("fFotoBtn").disabled = formFotos.length >= 4;
+}
+async function addFotos(files){
+  for(const f of files){
+    if(formFotos.length >= 4) break;
+    try {
+      const data = await compress(f), id = uid();
+      await putFoto(id, data);
+      formFotos.push(id); addedFotos.push(id); renderFormFotos();
+    } catch(e){ $("msg").textContent = "No se pudo guardar una foto en este navegador."; }
+  }
+}
 function openForm(id){
-  editingId = id || null;
+  editingId = id || null; formSaved = false; addedFotos = []; removedFotos = [];
   const it = id ? items.find(x=>x.id===id) : {estado:"recibido"};
+  formFotos = (it.fotos || []).slice();
   $("dlgTitle").textContent = id ? "Editar reparación" : "Nueva reparación";
   $("fCliente").value = it.cliente||""; $("fTel").value = it.tel||""; $("fEquipo").value = it.equipo||"";
   $("fEstado").value = it.estado; $("fFalla").value = it.falla||""; $("fNotas").value = it.notas||"";
   $("fRepuestos").value = it.repuestos||""; $("fCostoRep").value = it.costoRep||""; $("fMano").value = it.mano||"";
-  $("fAbono").value = it.abono||""; $("fGarantia").value = it.garantia||""; $("fAccesorios").value = it.accesorios||""; $("fIva").checked = !!it.iva;
+  $("fAbono").value = it.abono||""; $("fGarantia").value = it.garantia||""; $("fAccesorios").value = it.accesorios||"";
+  $("fFecha").value = it.fechaEst||""; $("fIva").checked = !!it.iva; $("fPago").value = it.pago||"";
+  renderFormFotos();
   $("dlg").showModal();
 }
 function saveForm(){
   const data = {
     cliente:$("fCliente").value.trim(), tel:$("fTel").value.trim(), equipo:$("fEquipo").value.trim(),
-    estado:$("fEstado").value, falla:$("fFalla").value.trim(), notas:$("fNotas").value.trim(),
+    falla:$("fFalla").value.trim(), notas:$("fNotas").value.trim(),
     repuestos:$("fRepuestos").value.trim(), costoRep:parseFloat($("fCostoRep").value)||0, mano:parseFloat($("fMano").value)||0,
     abono:parseFloat($("fAbono").value)||0, garantia:parseInt($("fGarantia").value)||0, accesorios:$("fAccesorios").value.trim(),
-    iva:$("fIva").checked
+    fechaEst:$("fFecha").value, iva:$("fIva").checked, pago:$("fPago").value, fotos:formFotos.slice()
   };
+  const estado = $("fEstado").value;
+  if(!data.equipo && !data.cliente){ $("fEquipo").focus(); return; }
   const prev = editingId ? items.find(x=>x.id===editingId) : null;
   data.ivaPct = (prev && prev.ivaPct!==undefined) ? prev.ivaPct : ivaRate;
-  if(!data.equipo && !data.cliente){ $("fEquipo").focus(); return; }
-  if(editingId){
-    const it = items.find(x=>x.id===editingId);
-    const was = it.estado; Object.assign(it, data);
-    if(data.estado==="entregado" && was!=="entregado") it.entregado = new Date().toISOString();
-    if(data.estado!=="entregado") delete it.entregado;
+  if(prev){
+    Object.assign(prev, data); setEstado(prev, estado);
   } else {
-    const it = Object.assign({id:uid(), orden:nextOrden(), fecha:new Date().toISOString()}, data);
-    if(it.estado==="entregado") it.entregado = it.fecha;
+    const it = Object.assign({id:uid(), orden:nextOrden(), fecha:new Date().toISOString(), estado:"recibido"}, data);
+    setEstado(it, estado);
     items.push(it);
   }
+  removedFotos.forEach(delFoto);
+  formSaved = true; addedFotos = []; removedFotos = [];
   save(); $("dlg").close(); render();
 }
 
+/* ---------- respaldo ---------- */
+async function exportFile(){
+  let fotos = {};
+  try { fotos = await allFotos(); } catch(e){}
+  const data = {app:"reparaciones", v:2, fecha:new Date().toISOString(), items, ivaRate, biz, fotos};
+  const blob = new Blob([JSON.stringify(data)], {type:"application/json"});
+  const name = "respaldo-reparaciones-" + todayStr() + ".json";
+  try {
+    const file = new File([blob], name, {type:"application/json"});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file], title:name});
+      markBackup(); $("msg").textContent = "Respaldo compartido. Guárdalo en tu Drive, WhatsApp o correo."; return;
+    }
+  } catch(e){ if(e && e.name==="AbortError") return; }
+  const url = URL.createObjectURL(blob), a = document.createElement("a");
+  a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  markBackup(); $("msg").textContent = "Respaldo descargado: " + name;
+}
+async function copyBackupText(){
+  const txt = JSON.stringify({app:"reparaciones", v:2, items, ivaRate, biz});
+  try { await navigator.clipboard.writeText(txt); markBackup(); $("msg").textContent = "Respaldo en texto copiado (sin fotos). Para guardar también las fotos usa Descargar respaldo."; }
+  catch(e){ $("importTxt").value = txt; $("dlgImport").showModal(); $("importTxt").select(); $("msg").textContent = "Copia el texto manualmente."; }
+}
+async function restoreFromText(txt){
+  let data;
+  try { data = JSON.parse(txt); } catch(e){ $("msg").textContent = "Ese archivo o texto no es un respaldo válido."; return; }
+  const arr = Array.isArray(data) ? data : (data && data.items);
+  if(!Array.isArray(arr)){ $("msg").textContent = "Ese archivo o texto no es un respaldo válido."; return; }
+  items = arr.filter(x => x && typeof x==="object" && x.id && x.fecha);
+  if(!Array.isArray(data)){
+    if(isFinite(data.ivaRate)) ivaRate = data.ivaRate;
+    if(data.biz && typeof data.biz==="object") biz = {name:String(data.biz.name||""), tel:String(data.biz.tel||"")};
+    if(data.fotos && typeof data.fotos==="object"){
+      try { await clearFotos(); for(const k of Object.keys(data.fotos)) await putFoto(k, data.fotos[k]); } catch(e){}
+    }
+  }
+  fixOrdenes(); save(); saveSettings();
+  $("ivaInput").value = ivaRate; $("bizName").value = biz.name||""; $("bizTel").value = biz.tel||"";
+  $("dlgImport").close(); render();
+  $("msg").textContent = "Respaldo restaurado: " + items.length + " registros.";
+}
+
+/* ---------- reportes ---------- */
+function openReport(){
+  const set = new Set([monthKey(new Date().toISOString())]);
+  items.forEach(i => { if(i.estado==="entregado" && i.entregado) set.add(monthKey(i.entregado)); });
+  const sel = $("repMonth"); sel.innerHTML = "";
+  [...set].sort().reverse().forEach(k => {
+    const [y,m] = k.split("-"), o = document.createElement("option");
+    o.value = k; o.textContent = new Date(+y, +m-1, 1).toLocaleDateString("es-EC",{month:"long",year:"numeric"});
+    sel.appendChild(o);
+  });
+  renderReport(); $("dlgRep").showModal();
+}
+function renderReport(){
+  const m = $("repMonth").value, body = $("repBody"); body.innerHTML = "";
+  const done = items.filter(i => i.estado==="entregado" && i.entregado && monthKey(i.entregado)===m);
+  let tot = 0, mano = 0, rep = 0, iva = 0;
+  done.forEach(i => { const t = totals(i); tot += t.total; mano += i.mano||0; rep += i.costoRep||0; iva += t.iva; });
+  const facts = el("div","facts");
+  [["Cobrado",money(tot)],["Equipos entregados",String(done.length)],["Mano de obra",money(mano)],["Repuestos",money(rep)],["IVA",money(iva)],["Promedio por equipo",money(done.length ? tot/done.length : 0)]].forEach(([k,v]) => {
+    const d = el("div"); d.appendChild(el("b","",v)); d.appendChild(el("span","",k)); facts.appendChild(d);
+  });
+  body.appendChild(facts);
+
+  body.appendChild(el("h3","","Cobrado por método de pago"));
+  const byPay = {};
+  done.forEach(i => { const k = i.pago || "Sin definir"; byPay[k] = (byPay[k]||0) + totals(i).total; });
+  const pk = Object.keys(byPay);
+  if(!pk.length) body.appendChild(el("p","","Sin entregas este mes."));
+  else { const ul = el("ul","top"); pk.sort((a,b)=>byPay[b]-byPay[a]).forEach(k => ul.appendChild(el("li","", k + ": " + money(byPay[k])))); body.appendChild(ul); }
+
+  body.appendChild(el("h3","","Últimos 6 meses (cobrado)"));
+  const now = new Date(), months = [];
+  for(let i=5;i>=0;i--){ const d = new Date(now.getFullYear(), now.getMonth()-i, 1); months.push({k:d.getFullYear()+"-"+pad(d.getMonth()+1), label:d.toLocaleDateString("es-EC",{month:"short"}).replace(".","")}); }
+  months.forEach(mo => { mo.v = items.filter(i => i.estado==="entregado" && i.entregado && monthKey(i.entregado)===mo.k).reduce((s,i)=>s+totals(i).total,0); });
+  const max = Math.max(1, ...months.map(mo=>mo.v));
+  const bars = el("div","bars");
+  months.forEach(mo => {
+    const row = el("div","b"), track = el("div","track"), fill = el("div","fill");
+    fill.style.width = (mo.v/max*100) + "%"; track.appendChild(fill);
+    row.append(el("span","",mo.label), track, el("span","v",money(mo.v)));
+    bars.appendChild(row);
+  });
+  body.appendChild(bars);
+
+  body.appendChild(el("h3","","Equipos que más reparas"));
+  const count = {};
+  items.forEach(i => { const k = (i.equipo||"").trim().toLowerCase(); if(!k) return; (count[k] = count[k] || {n:0, label:i.equipo.trim()}).n++; });
+  const top = Object.values(count).sort((a,b)=>b.n-a.n).slice(0,5);
+  if(!top.length) body.appendChild(el("p","","Todavía no hay datos."));
+  else { const ol = el("ol","top"); top.forEach(t => ol.appendChild(el("li","", t.label + " (" + t.n + (t.n===1 ? " vez" : " veces") + ")"))); body.appendChild(ol); }
+}
+
+/* ---------- eventos ---------- */
 ESTADOS.forEach(e => { const o = document.createElement("option"); o.value = e.k; o.textContent = e.t; $("fEstado").appendChild(o); });
+[["","Sin definir"]].concat(PAGOS.map(p => [p,p])).forEach(([v,t]) => { const o = document.createElement("option"); o.value = v; o.textContent = t; $("fPago").appendChild(o); });
 $("newBtn").onclick = () => openForm();
+$("repBtn").onclick = openReport;
+$("repMonth").onchange = renderReport;
+$("repClose").onclick = () => $("dlgRep").close();
+$("fotoClose").onclick = () => $("dlgFoto").close();
 $("saveBtn").onclick = saveForm;
 $("cancelBtn").onclick = () => $("dlg").close();
+$("dlg").addEventListener("close", () => { if(!formSaved){ addedFotos.forEach(delFoto); addedFotos = []; } });
+$("fFotoBtn").onclick = () => $("fFotoInput").click();
+$("fFotoInput").onchange = async e => { const files = [...e.target.files]; e.target.value = ""; await addFotos(files); };
 $("q").oninput = render;
-$("copyBtn").onclick = async () => {
-  const txt = JSON.stringify(items);
-  try { await navigator.clipboard.writeText(txt); $("msg").textContent = "Respaldo copiado. Pégalo en tus notas o envíatelo por mensaje."; }
-  catch(e){ $("importTxt").value = txt; $("dlgImport").showModal(); $("importTxt").select(); $("msg").textContent = "Copia el texto manualmente."; }
-};
-$("importBtn").onclick = () => { $("importTxt").value = ""; $("dlgImport").showModal(); };
+$("exportBtn").onclick = exportFile;
+$("copyBtn").onclick = copyBackupText;
+$("importBtn").onclick = () => { $("importTxt").value = ""; $("impFile").value = ""; $("dlgImport").showModal(); };
 $("impCancel").onclick = () => $("dlgImport").close();
-$("impOk").onclick = () => {
-  try {
-    const arr = JSON.parse($("importTxt").value);
-    if(!Array.isArray(arr)) throw 0;
-    items = arr.filter(x => x && typeof x==="object" && x.id && x.fecha); fixOrdenes();
-    save(); $("dlgImport").close(); render(); $("msg").textContent = "Respaldo restaurado: " + items.length + " registros.";
-  } catch(e){ $("msg").textContent = "Ese texto no es un respaldo válido."; }
-};
-load(); fixOrdenes(); loadBiz(); buildFilters(); render();
-$("bizName").oninput = saveBiz; $("bizTel").oninput = saveBiz;
-$("ivaInput").value = ivaRate;
-$("ivaInput").oninput = () => { ivaRate = parseFloat($("ivaInput").value)||0; try { localStorage.setItem(KEY+"-iva", String(ivaRate)); } catch(e){} };
-if(!storageOK) $("msg").textContent = "Este navegador no permite guardar datos. Copia un respaldo antes de salir.";
+$("impFile").onchange = e => { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = () => { $("importTxt").value = r.result; }; r.readAsText(f); };
+$("impOk").onclick = () => { const t = $("importTxt").value.trim(); if(!t){ $("msg").textContent = "Elige un archivo o pega el texto del respaldo."; return; } restoreFromText(t); };
+$("bizName").oninput = $("bizTel").oninput = () => { biz = {name:$("bizName").value.trim(), tel:$("bizTel").value.trim()}; saveSettings(); };
+$("ivaInput").oninput = () => { ivaRate = parseFloat($("ivaInput").value)||0; saveSettings(); };
+
+load(); fixOrdenes();
+$("bizName").value = biz.name||""; $("bizTel").value = biz.tel||""; $("ivaInput").value = ivaRate;
+buildFilters(); render(); showLastBk();
+if(!storageOK) $("msg").textContent = "Este navegador no permite guardar datos. Descarga un respaldo antes de salir.";
 </script>
 <script>
 if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}
