@@ -114,6 +114,7 @@ label span{display:block;font-size:.88rem;color:var(--muted);margin-bottom:3px;f
   :root{padding:0!important}
   body>*:not(#receipt){display:none!important}
   #receipt{display:block;position:relative;overflow:hidden;color:#000;background:#fff;font:13px/1.4 "Barlow",Arial,sans-serif;width:210mm;padding:8mm 10mm;margin:0 auto;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #receipt:not(.compact){min-height:297mm;display:flex;flex-direction:column;justify-content:center}
   #receipt .r-copy{position:relative;overflow:hidden;break-inside:avoid;page-break-inside:avoid;padding:1mm 0}
   #receipt .r-wm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;transform:rotate(-28deg);font:700 44px/1 "Barlow Condensed",Arial,sans-serif;letter-spacing:2px;color:#000;opacity:.1;white-space:nowrap;pointer-events:none;user-select:none}
   #receipt>*:not(.r-wm){position:relative;z-index:1}
@@ -129,14 +130,15 @@ label span{display:block;font-size:.88rem;color:var(--muted);margin-bottom:3px;f
   #receipt .r-cost tr.r-total td{font-weight:700;font-size:16px;border-top:2px solid #000}
   #receipt .r-sign{display:flex;justify-content:space-between;gap:30px;margin-top:56px}
   #receipt .r-sign span{flex:1;border-top:1px solid #000;padding-top:4px;text-align:center;font-size:13px}
-  #receipt.compact{font-size:11.5px;padding:7mm 10mm}
-  #receipt.compact .r-copy{padding:5mm 0}
+  #receipt.compact{font-size:11.5px;padding:7mm 10mm;height:297mm;display:flex;flex-direction:column}
+  #receipt.compact .r-copy{flex:1 1 auto;display:flex;flex-direction:column;padding:4mm 0}
+  #receipt.compact .r-cut{flex:none;margin:2mm 0}
   #receipt.compact h1{font-size:22px}
   #receipt.compact h2{font-size:15.5px;margin:7px 0 2px;padding-bottom:3px}
   #receipt.compact p{margin:2px 0}
   #receipt.compact table{margin:5px 0}
   #receipt.compact td{padding:2px 5px}
-  #receipt.compact .r-sign{margin-top:20px}
+  #receipt.compact .r-sign{margin-top:auto;padding-top:6mm}
   #receipt .r-cut{border-top:2px dashed #000;margin:4mm 0 3mm;text-align:center;font-size:10px;padding-top:2px}
   #receipt .r-terms{font-size:10.5px;margin:5px 0}
 }
@@ -419,7 +421,7 @@ function openWhatsApp(it){
 function marcaAgua(){
   const txt = biz.name || MARCA_AGUA;
   const wm = el("div","r-wm",txt);
-  wm.style.fontSize = Math.max(16, Math.min(44, Math.round(150/(0.16*txt.length + 0.662)))) + "px";
+  wm.style.fontSize = Math.max(16, Math.min(60, Math.round(220/(0.16*txt.length + 0.662)))) + "px";
   return wm;
 }
 function printReceipt(it){
