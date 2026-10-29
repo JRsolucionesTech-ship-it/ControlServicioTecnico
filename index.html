@@ -93,6 +93,7 @@ label span{display:block;font-size:.88rem;color:var(--muted);margin-bottom:3px;f
 .credit{display:flex;align-items:center;justify-content:center;gap:8px;margin:26px 0 0;padding-top:14px;border-top:1px solid var(--line);font-size:.82rem;color:var(--muted);letter-spacing:.2px}
 .credit b{font-weight:600;color:var(--ink)}
 .credit-mark{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:7px;background:var(--accent);color:var(--accent-ink);font:700 12px/1 "Barlow Condensed",sans-serif;letter-spacing:.5px;flex:none}
+.credit a{color:var(--muted);text-decoration:none;border-bottom:1px solid var(--line)}
 .check{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .check input{width:22px;height:22px;min-height:0;padding:0;flex:none}
 .check span{display:inline;margin:0;color:var(--ink);font-size:1rem}
@@ -182,7 +183,7 @@ label span{display:block;font-size:.88rem;color:var(--muted);margin-bottom:3px;f
   <label><span>Condiciones que salen al pie del comprobante de ingreso (opcional)</span><textarea id="bizTerms" placeholder="Si lo dejas vacío se usa un texto básico."></textarea></label>
   <label style="max-width:240px"><span>IVA para reparaciones nuevas (%)</span><input id="ivaInput" type="number" inputmode="decimal" min="0" max="100" step="any"></label>
   <div class="msg" id="msg" role="status"></div>
-  <footer class="credit"><span class="credit-mark" aria-hidden="true">JR</span><span>Hecho por <b>JR Soluciones Tecnológicas</b></span></footer>
+  <footer class="credit"><span class="credit-mark" aria-hidden="true">JR</span><span>Hecho por <b>JR Soluciones Tecnológicas</b> · <a href="privacidad.html">Privacidad</a></span></footer>
 </main>
 
 <div id="receipt" aria-hidden="true"></div>

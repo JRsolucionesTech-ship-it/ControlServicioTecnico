@@ -1,14 +1,18 @@
 {
+  "id": "./",
   "name": "Registro de reparaciones",
   "short_name": "Reparaciones",
   "description": "Registro de equipos, cotizaciones y recibos del taller.",
   "lang": "es",
-  "start_url": "./index.html",
+  "dir": "ltr",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
   "background_color": "#e8edef",
   "theme_color": "#0b6e78",
+  "categories": ["business", "productivity"],
   "icons": [
     {
       "src": "icon-192.png",

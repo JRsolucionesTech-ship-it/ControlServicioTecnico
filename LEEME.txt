@@ -53,11 +53,17 @@ DATOS Y RESPALDOS
 - Las fotos solo se incluyen en "Descargar respaldo", no en el respaldo de texto.
 
 PARA ACTUALIZAR
-- Cambia el texto de CACHE en sw.js (por ejemplo, de "reparaciones-v7"
-  a "reparaciones-v8") cada vez que modifiques index.html, para que los
+- Cambia el texto de CACHE en sw.js (por ejemplo, de "reparaciones-v8"
+  a "reparaciones-v9") cada vez que modifiques index.html, para que los
   equipos tomen la versión nueva al abrir la app.
 
 CRÉDITO DE LA APP
 - El pie de la app dice "Hecho por JR Soluciones Tecnológicas".
 - Es fijo, no se puede quitar desde los ajustes y no aparece en los
   comprobantes impresos (por ahora).
+
+POLÍTICA DE PRIVACIDAD
+- El archivo privacidad.html es la política de privacidad que pide
+  Google Play. Debe quedar publicada en la misma carpeta de la app.
+- El pie de la app tiene un enlace discreto a "Privacidad".
+- Antes de publicar, reemplaza CONTACTO@EJEMPLO.COM por un correo real.
