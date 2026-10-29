@@ -113,9 +113,10 @@ label span{display:block;font-size:.88rem;color:var(--muted);margin-bottom:3px;f
   html,body{background:#fff!important}
   :root{padding:0!important}
   body>*:not(#receipt){display:none!important}
-  #receipt{display:block;color:#000;background:#fff;font:13px/1.4 "Barlow",Arial,sans-serif;width:210mm;min-height:297mm;padding:8mm 10mm;margin:0 auto;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #receipt{display:block;position:relative;overflow:hidden;color:#000;background:#fff;font:13px/1.4 "Barlow",Arial,sans-serif;width:210mm;padding:8mm 10mm;margin:0 auto;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   #receipt .r-copy{position:relative;overflow:hidden;break-inside:avoid;page-break-inside:avoid;padding:1mm 0}
   #receipt .r-wm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;transform:rotate(-28deg);font:700 44px/1 "Barlow Condensed",Arial,sans-serif;letter-spacing:2px;color:#000;opacity:.1;white-space:nowrap;pointer-events:none;user-select:none}
+  #receipt>*:not(.r-wm){position:relative;z-index:1}
   #receipt .r-copy>*:not(.r-wm){position:relative;z-index:1}
   #receipt h1{font:700 28px/1.1 "Barlow Condensed",Arial,sans-serif;margin:0}
   #receipt h2{font:600 20px/1.2 "Barlow Condensed",Arial,sans-serif;margin:14px 0 4px;padding-bottom:6px;border-bottom:2px solid #000}
@@ -128,9 +129,8 @@ label span{display:block;font-size:.88rem;color:var(--muted);margin-bottom:3px;f
   #receipt .r-cost tr.r-total td{font-weight:700;font-size:16px;border-top:2px solid #000}
   #receipt .r-sign{display:flex;justify-content:space-between;gap:30px;margin-top:56px}
   #receipt .r-sign span{flex:1;border-top:1px solid #000;padding-top:4px;text-align:center;font-size:13px}
-  #receipt.compact{font-size:11.5px;padding:7mm 10mm;height:297mm;display:flex;flex-direction:column}
-  #receipt.compact .r-copy{flex:1 1 0;min-height:0;display:flex;flex-direction:column;justify-content:center}
-  #receipt.compact .r-cut{flex:none}
+  #receipt.compact{font-size:11.5px;padding:7mm 10mm}
+  #receipt.compact .r-copy{padding:5mm 0}
   #receipt.compact h1{font-size:22px}
   #receipt.compact h2{font-size:15.5px;margin:7px 0 2px;padding-bottom:3px}
   #receipt.compact p{margin:2px 0}
@@ -254,6 +254,7 @@ const ESTADOS = [
   {k:"entregado", t:"Entregado", c:"var(--s-entregado)"}
 ];
 const PAGOS = ["Efectivo","Transferencia","Tarjeta","Otro"];
+const MARCA_AGUA = "NOVEDADES KAREN";
 const KEY = "reparaciones-v1";
 let items = [], filter = "activos", editingId = null, storageOK = true;
 let ivaRate = 15, biz = {name:"", tel:""};
@@ -415,14 +416,21 @@ function openWhatsApp(it){
 }
 
 /* ---------- recibo ---------- */
+function marcaAgua(){
+  const txt = biz.name || MARCA_AGUA;
+  const wm = el("div","r-wm",txt);
+  wm.style.fontSize = Math.max(16, Math.min(44, Math.round(150/(0.16*txt.length + 0.662)))) + "px";
+  return wm;
+}
 function printReceipt(it){
   const t = totals(it), r = $("receipt"); r.innerHTML = ""; r.className = "";
+  r.appendChild(marcaAgua());
   const add = (tag, cls, txt) => { const e = el(tag, cls, txt); r.appendChild(e); return e; };
   add("h1","", biz.name || "Recibo de reparación");
   if(biz.tel) add("p","", "Tel. " + biz.tel);
   add("h2","", "Recibo de reparación " + ord(it.orden));
   add("p","", "Fecha de ingreso: " + new Date(it.fecha).toLocaleDateString("es-EC",{day:"2-digit",month:"long",year:"numeric"}) + " · Estado: " + est(it.estado).t);
-  const info = [["Cliente",it.cliente],["Teléfono",it.tel],["Equipo",it.equipo],["Accesorios recibidos",it.accesorios],["Falla reportada",it.falla],["Trabajo realizado",it.notas],["Repuestos usados",it.repuestos],["Entrega estimada",it.fechaEst ? fdateStr(it.fechaEst) : ""],["Forma de pago",it.pago]].filter(x => x[1]);
+  const info = [["Cliente",it.cliente],["Teléfono",it.tel],["Equipo",it.equipo],["Serie / IMEI",it.serie],["Accesorios recibidos",it.accesorios],["Falla reportada",it.falla],["Trabajo realizado",it.notas],["Repuestos usados",it.repuestos],["Entrega estimada",it.fechaEst ? fdateStr(it.fechaEst) : ""],["Forma de pago",it.pago]].filter(x => x[1]);
   const tb = document.createElement("table");
   info.forEach(([k,v]) => { const tr = tb.insertRow(); tr.insertCell().textContent = k; tr.insertCell().textContent = v; });
   r.appendChild(tb);
@@ -445,7 +453,7 @@ function printIntake(it){
   ["Copia del cliente","Copia del taller"].forEach((label, n) => {
     if(n) r.appendChild(el("div","r-cut","✂ cortar aquí"));
     const copy = el("section","r-copy"); r.appendChild(copy);
-    copy.appendChild(el("div","r-wm","NOVEDADES KAREN"));
+    copy.appendChild(marcaAgua());
     const add = (tag, cls, txt) => { const e = el(tag, cls, txt); copy.appendChild(e); return e; };
     add("h1","", biz.name || "Comprobante de ingreso");
     if(biz.tel) add("p","", "Tel. " + biz.tel);
