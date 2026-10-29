@@ -1,20 +1,36 @@
-Registro de reparaciones — instalable en Android
-=====================================
+Registro de reparaciones — instalable en varios equipos
+========================================================
 
 Esta carpeta es una PWA: una página que se instala como app, con su ícono,
 y que funciona sin internet después de la primera vez que se abre.
 
-OPCIÓN A — Instalar como app (sin APK)
+OPCIÓN A — Instalar como app (recomendada, sin APK)
 1. Sube todo el contenido de esta carpeta a un hosting con HTTPS.
    Gratis y sencillo: GitHub Pages.
-   - Crea un repositorio en github.com y sube los 6 archivos.
+   - Crea un repositorio en github.com y sube estos archivos.
    - En Settings > Pages elige la rama main y la carpeta raíz.
    - Te da un enlace como https://tu-usuario.github.io/nombre-del-repo/
-2. Abre ese enlace en Chrome del celular.
-3. Menú de los tres puntos > "Instalar app" (o "Añadir a la pantalla de inicio").
+2. Abre ese enlace en el navegador del equipo.
+3. Instálala según el equipo:
+   - Android (Chrome): menú de los tres puntos > "Instalar app"
+     (o "Añadir a la pantalla de inicio").
+   - iPhone (Safari): botón Compartir > "Añadir a pantalla de inicio".
+   - Windows (Edge o Chrome): icono de instalar en la barra de direcciones,
+     o menú > "Instalar esta aplicación".
 4. Abre la app desde el ícono. Listo.
 
-OPCIÓN B — Convertirla en APK
+VARIOS EQUIPOS Y VARIOS USUARIOS
+- Puedes instalarla en todos los celulares o computadoras que quieras.
+- Cada instalación guarda sus propios datos en ese equipo: no se comparten
+  entre sí. Es ideal si cada persona lleva su propio registro.
+- Si es el mismo equipo usado por varias personas, todos ven los mismos datos.
+- Para pasar los datos de un equipo a otro: en el equipo con los datos usa
+  "Descargar respaldo", y en el otro usa "Restaurar respaldo".
+- Importante: la PWA y el APK guardan datos por separado. Si instalas una
+  y luego la otra en el mismo celular, no verás los mismos registros.
+  Elige una sola forma por equipo y usa respaldos antes de cambiar.
+
+OPCIÓN B — Convertirla en APK (solo Android)
 1. Primero haz la Opción A para tener el enlace https.
 2. Entra a https://www.pwabuilder.com y pega tu enlace.
 3. Elige Android y descarga el paquete. Para instalar directo en un celular
@@ -23,13 +39,25 @@ OPCIÓN B — Convertirla en APK
 4. Pasa el .apk al celular y ábrelo. Android pedirá permiso para instalar
    desde orígenes desconocidos.
 5. Guarda la llave de firma que te entregue el sitio: la necesitas para
-   futuras versiones.
+   futuras versiones del APK.
+
+OPCIÓN C — Windows como ejecutable
+- Lo más simple es instalarla como app desde Edge o Chrome (Opción A).
+- Si necesitas un .exe independiente, hay que empaquetarla con una
+  herramienta como Tauri o Electron. Avísame y lo vemos.
 
 DATOS Y RESPALDOS
-- Todo se guarda en el propio celular. La app instalada como PWA y el APK
-  guardan datos por separado, así que usa los botones de respaldo
-  antes de cambiar de una a otra.
+- Todo se guarda en el propio dispositivo (registros, fotos, configuración).
+- Cada equipo es independiente; no hay nube ni sincronización automática.
+- Descarga un respaldo con frecuencia y guárdalo en Drive, WhatsApp o correo.
+- Las fotos solo se incluyen en "Descargar respaldo", no en el respaldo de texto.
 
 PARA ACTUALIZAR
-- Cambia el texto de CACHE en sw.js (por ejemplo "reparaciones-v1" a "reparaciones-v1b")
-  cada vez que modifiques index.html, para que los celulares tomen la versión nueva.
+- Cambia el texto de CACHE en sw.js (por ejemplo, de "reparaciones-v7"
+  a "reparaciones-v8") cada vez que modifiques index.html, para que los
+  equipos tomen la versión nueva al abrir la app.
+
+CRÉDITO DE LA APP
+- El pie de la app dice "Hecho por JR Soluciones Tecnológicas".
+- Es fijo, no se puede quitar desde los ajustes y no aparece en los
+  comprobantes impresos (por ahora).
