@@ -8,6 +8,8 @@ self.addEventListener("activate", e => {
 });
 self.addEventListener("fetch", e => {
   if (e.request.method !== "GET") return;
+  const p = new URL(e.request.url).pathname;
+  if (p === "/keepalive" || p === "/oauth") return;
   e.respondWith(caches.match(e.request, { ignoreSearch: true }).then(hit => {
     const net = fetch(e.request).then(r => {
       if (r && (r.ok || r.type === "opaque")) { const copy = r.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); }

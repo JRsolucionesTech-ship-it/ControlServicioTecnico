@@ -218,6 +218,19 @@ label span{display:block;font-size:.88rem;color:var(--muted);margin-bottom:3px;f
     </div>
     <div class="msg" id="cloudSt" style="margin-top:8px"></div>
   </div>
+  <div id="driveBox" style="margin-bottom:10px">
+    <label><span>Respaldo en Google Drive (cada técnico inicia sesión con su propia cuenta de Google; la copia se ve en su Drive, en la carpeta "JR Reparaciones - Respaldos")</span></label>
+    <div class="grid">
+      <label style="margin-bottom:0"><span>ID de cliente de Google (se crea una vez siguiendo LEEME-DRIVE.txt)</span><input id="driveClient" autocomplete="off" placeholder="xxxx.apps.googleusercontent.com"></label>
+    </div>
+    <div style="display:flex;gap:8px;align-items:end;margin-top:10px;flex-wrap:wrap">
+      <button id="driveConnect" type="button">Conectar con Google</button>
+      <button id="driveBackup" type="button">Hacer respaldo a Drive</button>
+      <button id="driveGet" type="button">Traer de Drive</button>
+      <button id="driveOff" type="button">Desconectar</button>
+    </div>
+    <div class="msg" id="driveSt" style="margin-top:8px"></div>
+  </div>
   <div class="msg" id="msg" role="status"></div>
   <footer class="credit"><span class="credit-mark" aria-hidden="true">JR</span><span>Hecho por <b>JR Soluciones Tecnológicas</b> · <a href="privacidad.html">Privacidad</a></span></footer>
 </main>
@@ -488,19 +501,22 @@ function cloudFileName(){
   const base = (cloud.equipo || "equipo").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "equipo";
   return "respaldo-" + base + ".json";
 }
+async function backupPayload(equipo){
+  let fotos = {};
+  try { fotos = await allFotos(); } catch(e){}
+  return JSON.stringify({app:"reparaciones", v:3, fecha:new Date().toISOString(), equipo:equipo||"", items, ivaRate, biz, tecnicos, clientes, fotos});
+}
 async function cloudUpload(silent){
   if(!cloudOK()){
     if(!silent) $("msg").textContent = "Primero pega la llave y el gist.";
     return false;
   }
   try {
-    let fotos = {};
-    try { fotos = await allFotos(); } catch(e){}
-    const data = {app:"reparaciones", v:3, fecha:new Date().toISOString(), equipo:cloud.equipo||"", items, ivaRate, biz, tecnicos, clientes, fotos};
+    const payload = await backupPayload($("#cloudEquipo") ? $("#cloudEquipo").value.trim() : (cloud.equipo||""));
     const r = await fetch("https://api.github.com/gists/" + gistId(cloud.gist), {
       method: "PATCH",
       headers: {"Authorization": "token " + cloud.token, "Accept": "application/vnd.github+json"},
-      body: JSON.stringify({files: {[cloudFileName()]: {content: JSON.stringify(data)}}})
+      body: JSON.stringify({files: {[cloudFileName()]: {content: payload}}})
     });
     if(!r.ok) throw new Error("HTTP " + r.status + (r.status===404 ? " (gist no encontrado)" : r.status===401 ? " (llave inválida o vencida)" : ""));
     try { localStorage.setItem(KEY+"-cloudbk", new Date().toISOString()); } catch(e){}
@@ -546,9 +562,186 @@ function cloudStatus(){
 }
 let cloudTmr = 0;
 function cloudSoon(){
-  if(!cloudOK()) return;
-  clearTimeout(cloudTmr);
-  cloudTmr = setTimeout(() => { if(cloudOK()) cloudUpload(true); }, 12000);
+  if(cloudOK()){
+    clearTimeout(cloudTmr);
+    cloudTmr = setTimeout(() => { if(cloudOK()) cloudUpload(true); }, 12000);
+  }
+  if(driveOK() && driveValid()){
+    clearTimeout(driveTmr);
+    driveTmr = setTimeout(() => { if(driveValid()) driveUpload(true); }, 15000);
+  }
+}
+
+/* ---------- respaldo en Google Drive (la cuenta de Google de cada técnico) ---------- */
+const DRIVECARPETA = "JR Reparaciones - Respaldos";
+let drive = {clientId:"", token:"", exp:0, folder:"", file:"", email:""};
+let driveTmr = 0, driveWIN = null, drivePend = null;
+function driveLoad(){
+  try {
+    const d = JSON.parse(localStorage.getItem(KEY+"-drive"));
+    if(d && typeof d==="object") drive = {
+      clientId:String(d.clientId||""),
+      token: (Number(d.exp)||0) > Date.now() ? String(d.token||"") : "",
+      exp:Number(d.exp)||0, folder:String(d.folder||""), file:String(d.file||""), email:String(d.email||"")
+    };
+  } catch(e){}
+}
+function driveSave(){ try{ localStorage.setItem(KEY+"-drive", JSON.stringify(drive)); }catch(e){} }
+function driveOK(){ return !!drive.clientId; }
+function driveValid(){ return !!drive.token && Date.now() < (drive.exp||0) - 60000; }
+function driveNet(){ return location.protocol === "http:" && (location.hostname==="127.0.0.1" || location.hostname==="localhost"); }
+async function drError(r){ let m = "HTTP " + r.status; try{ const j = await r.json(); if(j && j.error) m += ": " + (j.error.message || j.error); }catch(e){} return m; }
+function Hdr(){ return {Authorization:"Bearer " + drive.token}; }
+function driveStatus(){
+  const n = $("driveSt"); if(!n) return;
+  const d = (()=>{ try{ return localStorage.getItem(KEY+"-cloudbk") || ""; }catch(e){ return ""; } })();
+  const rec = d ? "hace " + Math.max(0, daysSince(d)) + (daysSince(d)===1 ? " día" : " días") : "nunca";
+  if(!driveOK()) n.textContent = "";
+  else if(driveValid() || drive.email) n.textContent = "Conectado a Drive" + (drive.email ? " (" + drive.email + ")" : "") + ". Último respaldo en Drive: " + rec + " — se repite solo cada vez que guardas algo.";
+  else n.textContent = "Pulsa 'Conectar con Google' para habilitar el respaldo en Drive.";
+}
+function driveAuth(auto){
+  if(!driveOK()){ $("msg").textContent = "Primero pega el ID de cliente de Google (paso del instructivo LEEME-DRIVE.txt)."; return Promise.resolve(false); }
+  if(!driveNet()){ $("msg").textContent = "Para usar Drive en la PC, abre la app con el ícono 'Registro de reparaciones (Drive)' (ver LEEME-DRIVE.txt)."; return Promise.resolve(false); }
+  return new Promise(res => {
+    const state = "jr" + Date.now() + Math.random().toString(36).slice(2);
+    const qs = new URLSearchParams({
+      client_id: drive.clientId,
+      redirect_uri: location.origin + "/oauth",
+      response_type: "token",
+      scope: "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email",
+      state: state
+    });
+    if(auto) qs.set("prompt", "none");
+    let done = false, tm = 0;
+    const fin = v => {
+      if(done) return; done = true;
+      clearTimeout(tm);
+      try{ if(driveWIN && !driveWIN.closed) driveWIN.close(); }catch(e){}
+      res(!!v);
+    };
+    tm = setTimeout(() => fin(false), auto ? 30000 : 300000);
+    try { driveWIN = window.open("https://accounts.google.com/o/oauth2/v2/auth?" + qs.toString(), "jrDrive" + state, "width=500,height=650"); }catch(e){ return fin(false); }
+    if(!driveWIN){ $("msg").textContent = "El navegador bloqueó la ventana de Google. Permite ventanas emergentes para esta página y vuelve a pulsar Conectar."; return fin(false); }
+    drivePend = {state, auto:!!auto, fin};
+  });
+}
+window.addEventListener("message", ev => {
+  const d = ev.data;
+  if(!d || !d.jrDrive || !drivePend) return;
+  const p = drivePend;
+  if(d.state !== p.state) return;
+  drivePend = null;
+  if(d.error || !d.access_token){
+    if(!p.auto) $("msg").textContent = "Google no completó la conexión" + (d.error ? " (" + d.error + ")" : "") + ". Verifica el ID de cliente y los pasos del instructivo.";
+    return p.fin(false);
+  }
+  drive.token = d.access_token;
+  drive.exp = Date.now() + ((Number(d.expires_in) || 3600) * 1000);
+  driveSave(); driveStatus();
+  try {
+    fetch("https://www.googleapis.com/oauth2/v3/userinfo", {headers:Hdr()})
+      .then(r => r.ok ? r.json() : null)
+      .then(u => { if(u && u.email){ drive.email = u.email; driveSave(); driveStatus(); } })
+      .catch(()=>{});
+  } catch(e){}
+  p.fin(true);
+});
+async function driveEnsureFolder(){
+  if(drive.folder) return drive.folder;
+  const u = new URL("https://www.googleapis.com/drive/v3/files");
+  u.search = new URLSearchParams({
+    q: "name='"+DRIVECARPETA+"' and mimeType='application/vnd.google-apps.folder' and trashed=false",
+    fields: "files(id,name)"
+  });
+  const r = await fetch(u, {headers:Hdr()});
+  if(!r.ok) throw new Error(await drError(r));
+  const g = await r.json();
+  if(g.files && g.files.length){ drive.folder = g.files[0].id; driveSave(); return drive.folder; }
+  const c = await fetch("https://www.googleapis.com/drive/v3/files", {
+    method:"POST", headers:{...Hdr(),"Content-Type":"application/json"},
+    body: JSON.stringify({name:DRIVECARPETA, mimeType:"application/vnd.google-apps.folder"})
+  });
+  if(!c.ok) throw new Error(await drError(c));
+  const cj = await c.json();
+  drive.folder = cj.id || "";
+  driveSave();
+  return drive.folder;
+}
+async function driveUpload(silent){
+  if(!driveOK()){ if(!silent) $("msg").textContent = "Primero pega el ID de cliente y pulsa 'Conectar con Google'."; return false; }
+  if(!driveValid()){
+    const ok = await driveAuth(true);
+    if(!ok){ if(!silent) $("msg").textContent = "Tu sesión de Google se venció o falta conectar; pulsa 'Conectar con Google'."; return false; }
+  }
+  try {
+    const folder = await driveEnsureFolder();
+    const payload = await backupPayload($("#cloudEquipo") ? $("#cloudEquipo").value.trim() : "");
+    const fname = cloudFileName();
+    let fid = drive.file || "";
+    if(fid){
+      const chk = await fetch("https://www.googleapis.com/drive/v3/files/"+encodeURIComponent(fid)+"?fields=id", {headers:Hdr()});
+      if(!chk.ok) fid = "";
+    }
+    if(!fid){
+      const u = new URL("https://www.googleapis.com/drive/v3/files");
+      u.search = new URLSearchParams({q: "name='"+fname+"' and trashed=false", fields: "files(id,name)"});
+      const r = await fetch(u, {headers:Hdr()});
+      if(!r.ok) throw new Error(await drError(r));
+      const g = await r.json();
+      fid = (g.files && g.files.length) ? g.files[0].id : "";
+    }
+    const bnd = "jrBnd" + Date.now();
+    const meta = JSON.stringify({name:fname, mimeType:"application/json", parents:[folder]});
+    const body = "--"+bnd+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+meta+"\r\n--"+bnd+"\r\nContent-Type: application/json\r\n\r\n"+payload+"\r\n--"+bnd+"--";
+    const url = fid
+      ? "https://www.googleapis.com/upload/drive/v3/files/"+encodeURIComponent(fid)+"?uploadType=multipart"
+      : "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart";
+    const r2 = await fetch(url, {
+      method: fid ? "PATCH" : "POST",
+      headers: {...Hdr(), "Content-Type": "multipart/related; boundary="+bnd},
+      body: body
+    });
+    if(!r2.ok) throw new Error(await drError(r2));
+    const j2 = await r2.json();
+    if(j2 && j2.id){ drive.file = j2.id; driveSave(); }
+    try { localStorage.setItem(KEY+"-cloudbk", new Date().toISOString()); } catch(e){}
+    cloudStatus(); driveStatus();
+    if(!silent) $("msg").textContent = "Respaldo guardado en tu Google Drive (carpeta \"" + DRIVECARPETA + "\", archivo " + fname + ").";
+    return true;
+  } catch(e){
+    if(!silent) $("msg").textContent = "No se pudo respaldar en Drive: " + e.message;
+    return false;
+  }
+}
+async function driveDownload(){
+  if(!driveOK()){ $("msg").textContent = "Primero conecta tu cuenta de Google."; return; }
+  if(!driveValid()){
+    const ok = await driveAuth(true);
+    if(!ok){ $("msg").textContent = "Tu sesión de Google se venció o falta conectar; pulsa 'Conectar con Google'."; return; }
+  }
+  try {
+    const folder = await driveEnsureFolder();
+    const u = new URL("https://www.googleapis.com/drive/v3/files");
+    u.search = new URLSearchParams({q: "'"+folder+"' in parents and trashed=false", fields: "files(id,name,modifiedTime)", pageSize: "100", orderBy: "modifiedTime desc"});
+    const r = await fetch(u, {headers:Hdr()});
+    if(!r.ok) throw new Error(await drError(r));
+    const files = (await r.json()).files || [];
+    if(!files.length){ $("msg").textContent = "Tu carpeta \"" + DRIVECARPETA + "\" en Drive todavía no tiene respaldos."; return; }
+    let pick = files[0];
+    if(files.length > 1){
+      const names = files.map(f => f.name).join("\n");
+      const ele = prompt("Hay varios respaldos en tu Drive (de distintos equipos). Escribe el nombre exacto del que quieres:\n" + names, pick.name);
+      if(!ele) return;
+      pick = files.find(f => f.name === ele.trim());
+      if(!pick){ $("msg").textContent = "No existe ese respaldo en tu Drive. Copia el nombre tal cual."; return; }
+    }
+    const rr = await fetch("https://www.googleapis.com/drive/v3/files/"+encodeURIComponent(pick.id)+"?alt=media", {headers:Hdr()});
+    if(!rr.ok) throw new Error(await drError(rr));
+    $("importTxt").value = await rr.text();
+    $("dlgImport").showModal();
+    $("msg").textContent = "Descargado de Drive: " + pick.name + ". Revisa y pulsa Restaurar.";
+  } catch(e){ $("msg").textContent = "No se pudo leer de Drive: " + e.message; }
 }
 
 /* ---------- fotos (IndexedDB) ---------- */
@@ -1058,6 +1251,21 @@ $("cloudToken").oninput = $("cloudGist").oninput = $("cloudEquipo").oninput = ()
 $("cloudOn").onclick = () => { if(cloudUpload(false)) {} };
 $("cloudGet").onclick = cloudDownload;
 $("cloudOff").onclick = () => { cloud = {token:"", gist:"", equipo:$("cloudEquipo").value.trim()}; cloudSave(); cloudStatus(); $("msg").textContent = "Nube desconectada; tus datos locales no se tocan."; };
+$("driveClient").oninput = () => { drive.clientId = $("driveClient").value.trim(); driveSave(); driveStatus(); };
+$("driveConnect").onclick = async () => {
+  const ok = await driveAuth(false);
+  if(ok){ $("msg").textContent = "Google conectado" + (drive.email ? " (" + drive.email + ")" : "") + ". Respaldo listo para tu Drive."; driveUpload(true); }
+};
+$("driveBackup").onclick = () => driveUpload(false);
+$("driveGet").onclick = driveDownload;
+$("driveOff").onclick = () => { drive.token=""; drive.exp=0; drive.folder=""; drive.file=""; drive.email=""; driveSave(); driveStatus(); $("msg").textContent = "Drive desconectado; tus datos locales no se tocan."; };
+if(driveNet()){
+  const ka = () => { try{ fetch(location.origin + "/keepalive", {cache:"no-store"}).catch(()=>{}); }catch(e){} };
+  ka(); setInterval(ka, 240000);
+} else {
+  const bx = $("driveBox");
+  if(bx){ bx.style.display = "none"; try{ bx.style.order = "9"; }catch(e){} }
+}
 
 load(); fixOrdenes();
 $("bizName").value = biz.name||""; $("bizTel").value = biz.tel||""; $("bizTerms").value = biz.terms||""; $("ivaInput").value = ivaRate;
@@ -1069,9 +1277,15 @@ if(!clientes.length){
 renderTecs(); renderClientes(); renderLogoPrev();
 $("cloudToken").value = cloud.token||""; $("cloudGist").value = cloud.gist||""; $("cloudEquipo").value = cloud.equipo||"";
 cloudStatus();
+driveLoad();
+$("driveClient").value = drive.clientId||"";
+driveStatus();
 try {
   const lastCloud = localStorage.getItem(KEY+"-cloudbk");
-  if(cloudOK() && (!lastCloud || Date.now() - new Date(lastCloud).getTime() > 36e5)) cloudUpload(true);
+  const hace = lastCloud ? (Date.now() - new Date(lastCloud).getTime()) : Infinity;
+  if(cloudOK() && (!lastCloud || hace > 36e5)) cloudUpload(true);
+  if(driveOK() && driveValid() && hace > 36e5) driveUpload(true);
+  if(driveOK() && drive.email && !driveValid() && hace > 36e5) setTimeout(() => { driveAuth(true).then(ok => { if(ok) driveUpload(true); }); }, 4000);
 } catch(e){}
 buildFilters(); render(); showLastBk();
 if(!storageOK) $("msg").textContent = "Este navegador no permite guardar datos. Descarga un respaldo antes de salir.";
