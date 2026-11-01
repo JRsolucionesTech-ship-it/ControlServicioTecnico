@@ -123,8 +123,11 @@ label span{display:block;font-size:.88rem;color:var(--muted);margin-bottom:3px;f
   #receipt:not(.compact){min-height:297mm;display:flex;flex-direction:column}
   #receipt .r-copy{position:relative;overflow:hidden;break-inside:avoid;page-break-inside:avoid;padding:1mm 0}
   #receipt .r-wm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;transform:rotate(-28deg);font:700 44px/1 "Barlow Condensed",Arial,sans-serif;letter-spacing:2px;color:#000;opacity:.1;white-space:nowrap;pointer-events:none;user-select:none}
-  #receipt .r-logo{display:block;margin:0 auto 12px;max-height:22mm;max-width:55%;object-fit:contain}
-  #receipt.compact .r-logo{max-height:14mm;margin:0 auto 6px}
+  #receipt .r-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  #receipt .r-head img{max-height:20mm;max-width:30mm;object-fit:contain;flex:none}
+  #receipt .r-head h1{margin:0}
+  #receipt .r-head p{margin:2px 0 0}
+  #receipt.compact .r-head img{max-height:12mm}
   #receipt>*:not(.r-wm){position:relative;z-index:1}
   #receipt .r-copy>*:not(.r-wm){position:relative;z-index:1}
   #receipt h1{font:700 28px/1.1 "Barlow Condensed",Arial,sans-serif;margin:0}
@@ -444,10 +447,20 @@ function renderLogoPrev(){
   if(biz.logo){ p.src = biz.logo; p.style.display = "inline-block"; }
   else p.style.display = "none";
 }
-function addLogo(container){
-  if(!biz.logo) return;
-  const img = document.createElement("img"); img.className = "r-logo"; img.src = biz.logo; img.alt = "";
-  container.appendChild(img);
+function addHeader(container, add){
+  if(!biz.logo){
+    add("h1","", biz.name || "Recibo de reparación");
+    if(biz.tel) add("p","", "Tel. " + biz.tel);
+    return;
+  }
+  const head = el("div","r-head");
+  const img = document.createElement("img"); img.src = biz.logo; img.alt = "";
+  head.appendChild(img);
+  const right = el("div","r-biz");
+  if(biz.name) right.appendChild(el("h1","", biz.name));
+  if(biz.tel) right.appendChild(el("p","", "Tel. " + biz.tel));
+  head.appendChild(right);
+  container.appendChild(head);
 }
 
 /* ---------- fotos (IndexedDB) ---------- */
@@ -567,10 +580,8 @@ function marcaAgua(){
 function printReceipt(it){
   const t = totals(it), r = $("receipt"); r.innerHTML = ""; r.className = "";
   r.appendChild(marcaAgua());
-  addLogo(r);
   const add = (tag, cls, txt) => { const e = el(tag, cls, txt); r.appendChild(e); return e; };
-  add("h1","", biz.name || "Recibo de reparación");
-  if(biz.tel) add("p","", "Tel. " + biz.tel);
+  addHeader(r, add);
   add("h2","", "Recibo de reparación " + ord(it.orden));
   add("p","", "Fecha de ingreso: " + new Date(it.fecha).toLocaleDateString("es-EC",{day:"2-digit",month:"long",year:"numeric"}) + " · Estado: " + est(it.estado).t);
   const info = [["Cliente",it.cliente],["Teléfono",it.tel],["Cédula / RUC",it.cedula],["Recibido por",it.tecnico],["Equipo",it.equipo],["Serie / IMEI",it.serie],["Accesorios recibidos",it.accesorios],["Falla reportada",it.falla],["Trabajo realizado",it.notas],["Repuestos usados",it.repuestos],["Entrega estimada",it.fechaEst ? fdateStr(it.fechaEst) : ""],["Forma de pago",it.pago]].filter(x => x[1]);
@@ -597,10 +608,8 @@ function printIntake(it){
     if(n) r.appendChild(el("div","r-cut","✂ cortar aquí"));
     const copy = el("section","r-copy"); r.appendChild(copy);
     copy.appendChild(marcaAgua());
-    addLogo(copy);
     const add = (tag, cls, txt) => { const e = el(tag, cls, txt); copy.appendChild(e); return e; };
-    add("h1","", biz.name || "Comprobante de ingreso");
-    if(biz.tel) add("p","", "Tel. " + biz.tel);
+    addHeader(copy, add);
     add("h2","", "Comprobante de ingreso " + ord(it.orden) + " · " + label);
     add("p","", "Fecha de ingreso: " + new Date(it.fecha).toLocaleString("es-EC",{day:"2-digit",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit"}));
     const info = [["Cliente",it.cliente],["Teléfono",it.tel],["Cédula / RUC",it.cedula],["Recibido por",it.tecnico],["Equipo",it.equipo],["Serie / IMEI",it.serie],["Características",it.caract],["Estado físico al recibirlo",it.estadoFis],["Accesorios recibidos",it.accesorios],["Falla reportada",it.falla],["Entrega estimada",it.fechaEst ? fdateStr(it.fechaEst) : ""],["Abono recibido",it.abono ? money(it.abono) : ""]].filter(x => x[1]);
