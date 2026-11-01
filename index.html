@@ -204,6 +204,20 @@ label span{display:block;font-size:.88rem;color:var(--muted);margin-bottom:3px;f
       <input id="logoInput" type="file" accept="image/*" style="display:none">
     </div>
   </div>
+  <div style="margin-bottom:10px">
+    <label><span>Respaldo automático en la nube (privado de este equipo; cada técnico conecta el suyo)</span></label>
+    <div class="grid">
+      <label style="margin-bottom:0"><span>Llave de nube (token de GitHub)</span><input id="cloudToken" type="password" autocomplete="off" placeholder="ghp_..."></label>
+      <label style="margin-bottom:0"><span>Nombre de este equipo</span><input id="cloudEquipo" autocomplete="off" placeholder="Ej. Laptop del taller"></label>
+      <label style="margin-top:10px"><span>Vínculo o ID del gist</span><input id="cloudGist" autocomplete="off" placeholder="https://gist.github.com/usuario/..." style="min-height:44px"></label>
+      <div style="display:flex;gap:8px;align-items:end;margin-top:10px">
+        <button id="cloudOn" type="button">Conectar y respaldar</button>
+        <button id="cloudGet" type="button">Traer de la nube</button>
+        <button id="cloudOff" type="button">Desconectar</button>
+      </div>
+    </div>
+    <div class="msg" id="cloudSt" style="margin-top:8px"></div>
+  </div>
   <div class="msg" id="msg" role="status"></div>
   <footer class="credit"><span class="credit-mark" aria-hidden="true">JR</span><span>Hecho por <b>JR Soluciones Tecnológicas</b> · <a href="privacidad.html">Privacidad</a></span></footer>
 </main>
@@ -295,6 +309,7 @@ const KEY = "reparaciones-v1";
 let items = [], filter = "activos", editingId = null, storageOK = true;
 let ivaRate = 15, biz = {name:"", tel:""};
 let clientes = [], tecnicos = [];
+let cloud = {token:"", gist:"", equipo:""};
 let formFotos = [], addedFotos = [], removedFotos = [], formSaved = false, justCreated = null;
 
 function el(tag, cls, text){ const e = document.createElement(tag); if(cls) e.className = cls; if(text!==undefined) e.textContent = text; return e; }
@@ -317,10 +332,12 @@ function load(){
   try { biz = JSON.parse(localStorage.getItem(KEY+"-biz")) || biz; } catch(e){}
   try { clientes = JSON.parse(localStorage.getItem(KEY+"-clientes")) || []; if(!Array.isArray(clientes)) clientes = []; } catch(e){ clientes = []; }
   try { tecnicos = JSON.parse(localStorage.getItem(KEY+"-tecs")) || []; if(!Array.isArray(tecnicos)) tecnicos = []; } catch(e){ tecnicos = []; }
+  try { cloud = JSON.parse(localStorage.getItem(KEY+"-nube")) || cloud; if(typeof cloud!=="object") cloud = {token:"", gist:"", equipo:""}; } catch(e){ cloud = {token:"", gist:"", equipo:""}; }
 }
 function save(){
   try { localStorage.setItem(KEY, JSON.stringify(items)); }
   catch(e){ storageOK = false; $("msg").textContent = "No se pudo guardar en este navegador. Descarga un respaldo para no perder los datos."; }
+  cloudSoon();
 }
 function saveSettings(){
   try {
@@ -461,6 +478,77 @@ function addHeader(container, add){
   if(biz.tel) right.appendChild(el("p","", "Tel. " + biz.tel));
   head.appendChild(right);
   container.appendChild(head);
+}
+
+/* ---------- respaldo en la nube (GitHub Gist privado) ---------- */
+function gistId(s){ const m = String(s||"").match(/[0-9a-f]{16,40}/i); return m ? m[0] : String(s||"").trim(); }
+function cloudOK(){ return !!(cloud.token && cloud.gist); }
+function cloudSave(){ try { localStorage.setItem(KEY+"-nube", JSON.stringify(cloud)); } catch(e){} }
+function cloudFileName(){
+  const base = (cloud.equipo || "equipo").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "equipo";
+  return "respaldo-" + base + ".json";
+}
+async function cloudUpload(silent){
+  if(!cloudOK()){
+    if(!silent) $("msg").textContent = "Primero pega la llave y el gist.";
+    return false;
+  }
+  try {
+    let fotos = {};
+    try { fotos = await allFotos(); } catch(e){}
+    const data = {app:"reparaciones", v:3, fecha:new Date().toISOString(), equipo:cloud.equipo||"", items, ivaRate, biz, tecnicos, clientes, fotos};
+    const r = await fetch("https://api.github.com/gists/" + gistId(cloud.gist), {
+      method: "PATCH",
+      headers: {"Authorization": "token " + cloud.token, "Accept": "application/vnd.github+json"},
+      body: JSON.stringify({files: {[cloudFileName()]: {content: JSON.stringify(data)}}})
+    });
+    if(!r.ok) throw new Error("HTTP " + r.status + (r.status===404 ? " (gist no encontrado)" : r.status===401 ? " (llave inválida o vencida)" : ""));
+    try { localStorage.setItem(KEY+"-cloudbk", new Date().toISOString()); } catch(e){}
+    cloudStatus();
+    if(!silent) $("msg").textContent = "Respaldo subido a la nube (" + cloudFileName() + ").";
+    return true;
+  } catch(e){
+    if(!silent) $("msg").textContent = "No se pudo respaldar en la nube: " + e.message;
+    return false;
+  }
+}
+async function cloudDownload(){
+  if(!cloudOK()){ $("msg").textContent = "Primero conecta la nube (llave y gist)."; return; }
+  try {
+    const r = await fetch("https://api.github.com/gists/" + gistId(cloud.gist), {
+      headers: {"Authorization": "token " + cloud.token, "Accept": "application/vnd.github+json"}
+    });
+    if(!r.ok) throw new Error("HTTP " + r.status);
+    const g = await r.json();
+    const files = Object.values(g.files || {}).filter(f => f.filename && f.filename.endsWith(".json") && f.raw_url);
+    if(!files.length){ $("msg").textContent = "Ese gist todavía no tiene respaldos."; return; }
+    files.sort((a,b) => (b.updated_at||"").localeCompare(a.updated_at||""));
+    let pick = files[0];
+    if(files.length > 1){
+      const names = files.map(f => f.filename).join("\n");
+      const ele = prompt("Hay varios respaldos en la nube (de distintos equipos). Escribe el nombre exacto del que quieres:\n" + names, pick.filename);
+      if(!ele) return;
+      pick = files.find(f => f.filename === ele.trim());
+      if(!pick){ $("msg").textContent = "No existe ese respaldo en la nube. Copia el nombre tal cual."; return; }
+    }
+    const rr = await fetch(pick.raw_url + "?t=" + Date.now());
+    const txt = await rr.text();
+    $("importTxt").value = txt;
+    $("dlgImport").showModal();
+    $("msg").textContent = "Descargado de la nube: " + pick.filename + ". Revisa y pulsa Restaurar.";
+  } catch(e){ $("msg").textContent = "No se pudo leer de la nube: " + e.message; }
+}
+function cloudStatus(){
+  const d = (() => { try { return localStorage.getItem(KEY+"-cloudbk") || ""; } catch(e){ return ""; } })();
+  const n = $("cloudSt"); if(!n) return;
+  if(cloudOK()) n.textContent = "Conectado. Último respaldo en la nube: " + (d ? "hace " + Math.max(0, daysSince(d)) + (daysSince(d)===1 ? " día" : " días") : "nunca") + " — se repite solo cada vez que guardas algo.";
+  else n.textContent = "Sin conectar. Crea la llave y el gist como te dice el guia (LEEME-NUBE.txt).";
+}
+let cloudTmr = 0;
+function cloudSoon(){
+  if(!cloudOK()) return;
+  clearTimeout(cloudTmr);
+  cloudTmr = setTimeout(() => { if(cloudOK()) cloudUpload(true); }, 12000);
 }
 
 /* ---------- fotos (IndexedDB) ---------- */
@@ -963,6 +1051,13 @@ $("logoDel").onclick = () => { biz.logo = ""; saveSettings(); renderLogoPrev(); 
 $("logoInput").onchange = async e => { const f = e.target.files[0]; e.target.value = ""; if(!f) return;
   try { biz.logo = await compressLogo(f); saveSettings(); renderLogoPrev(); $("msg").textContent = "Logotipo actualizado."; }
   catch(err){ $("msg").textContent = "No se pudo cargar esa imagen de logo."; } };
+$("cloudToken").oninput = $("cloudGist").oninput = $("cloudEquipo").oninput = () => {
+  cloud = {token:$("cloudToken").value.trim(), gist:$("cloudGist").value.trim(), equipo:$("cloudEquipo").value.trim()};
+  cloudSave(); cloudStatus();
+};
+$("cloudOn").onclick = () => { if(cloudUpload(false)) {} };
+$("cloudGet").onclick = cloudDownload;
+$("cloudOff").onclick = () => { cloud = {token:"", gist:"", equipo:$("cloudEquipo").value.trim()}; cloudSave(); cloudStatus(); $("msg").textContent = "Nube desconectada; tus datos locales no se tocan."; };
 
 load(); fixOrdenes();
 $("bizName").value = biz.name||""; $("bizTel").value = biz.tel||""; $("bizTerms").value = biz.terms||""; $("ivaInput").value = ivaRate;
@@ -972,6 +1067,12 @@ if(!clientes.length){
   if(added) saveSettings();
 }
 renderTecs(); renderClientes(); renderLogoPrev();
+$("cloudToken").value = cloud.token||""; $("cloudGist").value = cloud.gist||""; $("cloudEquipo").value = cloud.equipo||"";
+cloudStatus();
+try {
+  const lastCloud = localStorage.getItem(KEY+"-cloudbk");
+  if(cloudOK() && (!lastCloud || Date.now() - new Date(lastCloud).getTime() > 36e5)) cloudUpload(true);
+} catch(e){}
 buildFilters(); render(); showLastBk();
 if(!storageOK) $("msg").textContent = "Este navegador no permite guardar datos. Descarga un respaldo antes de salir.";
 </script>
