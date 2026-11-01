@@ -120,9 +120,11 @@ label span{display:block;font-size:.88rem;color:var(--muted);margin-bottom:3px;f
   :root{padding:0!important}
   body>*:not(#receipt){display:none!important}
   #receipt{display:block;position:relative;overflow:hidden;color:#000;background:#fff;font:13px/1.4 "Barlow",Arial,sans-serif;width:210mm;padding:8mm 10mm;margin:0 auto;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  #receipt:not(.compact){min-height:297mm;display:flex;flex-direction:column;justify-content:center}
+  #receipt:not(.compact){min-height:297mm;display:flex;flex-direction:column}
   #receipt .r-copy{position:relative;overflow:hidden;break-inside:avoid;page-break-inside:avoid;padding:1mm 0}
   #receipt .r-wm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;transform:rotate(-28deg);font:700 44px/1 "Barlow Condensed",Arial,sans-serif;letter-spacing:2px;color:#000;opacity:.1;white-space:nowrap;pointer-events:none;user-select:none}
+  #receipt .r-logo{display:block;margin:0 auto 12px;max-height:22mm;max-width:55%;object-fit:contain}
+  #receipt.compact .r-logo{max-height:14mm;margin:0 auto 6px}
   #receipt>*:not(.r-wm){position:relative;z-index:1}
   #receipt .r-copy>*:not(.r-wm){position:relative;z-index:1}
   #receipt h1{font:700 28px/1.1 "Barlow Condensed",Arial,sans-serif;margin:0}
@@ -182,6 +184,23 @@ label span{display:block;font-size:.88rem;color:var(--muted);margin-bottom:3px;f
   <label><span>Teléfono del taller</span><input id="bizTel" type="tel" inputmode="tel"></label>
   <label><span>Condiciones que salen al pie del comprobante de ingreso (opcional)</span><textarea id="bizTerms" placeholder="Si lo dejas vacío se usa un texto básico."></textarea></label>
   <label style="max-width:240px"><span>IVA para reparaciones nuevas (%)</span><input id="ivaInput" type="number" inputmode="decimal" min="0" max="100" step="any"></label>
+  <div style="margin-top:16px;margin-bottom:10px">
+    <label><span>Técnicos del taller (en la ficha eliges quién recibió el equipo; aquí puedes quitar o agregar nombres)</span></label>
+    <div style="display:flex;gap:8px;align-items:flex-start">
+      <input id="tecInput" placeholder="Nombre del técnico (ej. Juan); pulsa Agregar o Enter" autocomplete="off">
+      <button id="tecAdd" type="button" style="flex:none">Agregar</button>
+    </div>
+    <div id="tecList" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;min-height:20px"></div>
+  </div>
+  <div style="margin-bottom:10px">
+    <label><span>Logotipo del taller (sale en el comprobante de ingreso y en el recibo)</span></label>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <button id="logoBtn" type="button">Elegir logo…</button>
+      <button id="logoDel" type="button">Quitar logo</button>
+      <img id="logoPrev" alt="Logotipo actual" style="height:44px;display:none;border-radius:6px;border:1px solid var(--line);background:#fff;padding:2px">
+      <input id="logoInput" type="file" accept="image/*" style="display:none">
+    </div>
+  </div>
   <div class="msg" id="msg" role="status"></div>
   <footer class="credit"><span class="credit-mark" aria-hidden="true">JR</span><span>Hecho por <b>JR Soluciones Tecnológicas</b> · <a href="privacidad.html">Privacidad</a></span></footer>
 </main>
@@ -191,8 +210,12 @@ label span{display:block;font-size:.88rem;color:var(--muted);margin-bottom:3px;f
 <dialog id="dlg">
   <h2 id="dlgTitle">Nueva reparación</h2>
   <div class="grid">
-    <label><span>Cliente</span><input id="fCliente" autocomplete="off"></label>
+    <label><span>Cliente</span><input id="fCliente" list="dlClientes" autocomplete="off"></label>
     <label><span>Teléfono (para WhatsApp)</span><input id="fTel" type="tel" inputmode="tel" placeholder="0991234567"></label>
+  </div>
+  <div class="grid">
+    <label><span>Cédula / RUC (opcional)</span><input id="fCedula" autocomplete="off" placeholder="Si ya es cliente, se llenan sus datos"></label>
+    <label><span>Recibido por (técnico)</span><select id="fTecnico"></select></label>
   </div>
   <div class="grid">
     <label><span>Equipo (marca y modelo)</span><input id="fEquipo" autocomplete="off"></label>
@@ -224,6 +247,7 @@ label span{display:block;font-size:.88rem;color:var(--muted);margin-bottom:3px;f
     <input id="fFotoInput" type="file" accept="image/*" multiple style="display:none">
     <button id="fFotoBtn" type="button">Agregar fotos</button>
   </div>
+  <datalist id="dlClientes"></datalist>
   <div class="foot">
     <button id="cancelBtn" type="button">Cancelar</button>
     <button id="saveBtn" class="primary" type="button">Guardar</button>
@@ -267,6 +291,7 @@ const MARCA_AGUA = "NOVEDADES KAREN";
 const KEY = "reparaciones-v1";
 let items = [], filter = "activos", editingId = null, storageOK = true;
 let ivaRate = 15, biz = {name:"", tel:""};
+let clientes = [], tecnicos = [];
 let formFotos = [], addedFotos = [], removedFotos = [], formSaved = false, justCreated = null;
 
 function el(tag, cls, text){ const e = document.createElement(tag); if(cls) e.className = cls; if(text!==undefined) e.textContent = text; return e; }
@@ -287,13 +312,18 @@ function load(){
   catch(e){ storageOK = false; items = []; }
   try { const r = localStorage.getItem(KEY+"-iva"); if(r!==null && isFinite(parseFloat(r))) ivaRate = parseFloat(r); } catch(e){}
   try { biz = JSON.parse(localStorage.getItem(KEY+"-biz")) || biz; } catch(e){}
+  try { clientes = JSON.parse(localStorage.getItem(KEY+"-clientes")) || []; if(!Array.isArray(clientes)) clientes = []; } catch(e){ clientes = []; }
+  try { tecnicos = JSON.parse(localStorage.getItem(KEY+"-tecs")) || []; if(!Array.isArray(tecnicos)) tecnicos = []; } catch(e){ tecnicos = []; }
 }
 function save(){
   try { localStorage.setItem(KEY, JSON.stringify(items)); }
   catch(e){ storageOK = false; $("msg").textContent = "No se pudo guardar en este navegador. Descarga un respaldo para no perder los datos."; }
 }
 function saveSettings(){
-  try { localStorage.setItem(KEY+"-iva", String(ivaRate)); localStorage.setItem(KEY+"-biz", JSON.stringify(biz)); } catch(e){}
+  try {
+    localStorage.setItem(KEY+"-iva", String(ivaRate)); localStorage.setItem(KEY+"-biz", JSON.stringify(biz));
+    localStorage.setItem(KEY+"-clientes", JSON.stringify(clientes)); localStorage.setItem(KEY+"-tecs", JSON.stringify(tecnicos));
+  } catch(e){}
 }
 const lastBackup = () => { try { return localStorage.getItem(KEY+"-bk") || ""; } catch(e){ return ""; } };
 function markBackup(){
@@ -315,6 +345,109 @@ function fixOrdenes(){
   let n = Math.max(0, ...items.map(i=>i.orden||0)), changed = false;
   items.filter(i=>!i.orden).sort((a,b)=>a.fecha.localeCompare(b.fecha)).forEach(i => { i.orden = ++n; changed = true; });
   if(changed) save();
+}
+
+/* ---------- clientes (se llenan solos al volver) ---------- */
+function upsertCliente(nombre, cedula, tel){
+  const n = (nombre||"").trim(); if(!n) return;
+  const key = n.toLowerCase();
+  let c = clientes.find(x => (x.nombre||"").toLowerCase()===key);
+  if(!c){ c = {nombre:n, cedula:"", tel:""}; clientes.push(c); }
+  if(cedula) c.cedula = cedula.trim();
+  if(tel) c.tel = tel.trim();
+  renderClientes();
+}
+function renderClientes(){
+  const dl = $("dlClientes"); if(!dl) return;
+  dl.innerHTML = "";
+  clientes.forEach(c => {
+    const o = document.createElement("option"); o.value = c.nombre;
+    const labs = [];
+    if(c.cedula) labs.push(c.cedula);
+    if(c.tel) labs.push("Tel. " + c.tel);
+    if(labs.length) o.label = labs.join(" · ");
+    dl.appendChild(o);
+  });
+}
+function fillFromCliente(){
+  if(editingId) return;
+  const n = $("fCliente").value.trim().toLowerCase();
+  if(!n) return;
+  const c = clientes.find(x => (x.nombre||"").toLowerCase()===n);
+  if(!c) return;
+  if(!$("fTel").value.trim()) $("fTel").value = c.tel||"";
+  if(!$("fCedula").value.trim()) $("fCedula").value = c.cedula||"";
+}
+function fillFromCedula(){
+  if(editingId) return;
+  const v = $("fCedula").value.trim().toLowerCase();
+  if(v.length < 3) return;
+  const c = clientes.find(x => (x.cedula||"").toLowerCase().startsWith(v));
+  if(!c) return;
+  if(!$("fCliente").value.trim()) $("fCliente").value = c.nombre;
+  if(!$("fTel").value.trim()) $("fTel").value = c.tel||"";
+  if(c.cedula) $("fCedula").value = c.cedula;
+}
+
+/* ---------- técnicos del taller ---------- */
+function saveTecs(){ try { localStorage.setItem(KEY+"-tecs", JSON.stringify(tecnicos)); } catch(e){} }
+function refreshTecSelect(){
+  const sel = $("fTecnico"); if(!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = "";
+  const o0 = document.createElement("option"); o0.value = ""; o0.textContent = "Sin definir"; sel.appendChild(o0);
+  tecnicos.forEach(t => { const o = document.createElement("option"); o.value = t; o.textContent = t; sel.appendChild(o); });
+  sel.value = tecnicos.includes(prev) ? prev : "";
+}
+function renderTecs(){
+  const box = $("tecList"); if(!box) return;
+  box.innerHTML = "";
+  if(!tecnicos.length){
+    const p = el("p","","Aún no hay técnicos. Agrega los nombres (ej. Juan, María, José).");
+    p.style.margin = "0"; p.style.color = "var(--muted)"; p.style.fontSize = ".88rem";
+    box.appendChild(p);
+  }
+  tecnicos.forEach((t, i) => {
+    const b = el("button","", t + " ✕"); b.type = "button"; b.title = "Quitar a " + t;
+    b.style.minHeight = "36px"; b.style.fontWeight = "500";
+    b.onclick = () => { tecnicos.splice(i,1); saveTecs(); renderTecs(); };
+    box.appendChild(b);
+  });
+  refreshTecSelect();
+}
+function addTec(){
+  const v = $("tecInput").value.trim(); if(!v) return;
+  if(!tecnicos.some(t => t.toLowerCase()===v.toLowerCase())){ tecnicos.push(v); saveTecs(); renderTecs(); }
+  $("tecInput").value = "";
+}
+
+/* ---------- logo del taller ---------- */
+function compressLogo(file){
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const k = Math.min(1, 480/Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width*k); c.height = Math.round(img.height*k);
+      const g = c.getContext("2d");
+      g.fillStyle = "#fff"; g.fillRect(0,0,c.width,c.height);
+      g.drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      res(c.toDataURL("image/jpeg", .88));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("imagen")); };
+    img.src = url;
+  });
+}
+function renderLogoPrev(){
+  const p = $("logoPrev"); if(!p) return;
+  if(biz.logo){ p.src = biz.logo; p.style.display = "inline-block"; }
+  else p.style.display = "none";
+}
+function addLogo(container){
+  if(!biz.logo) return;
+  const img = document.createElement("img"); img.className = "r-logo"; img.src = biz.logo; img.alt = "";
+  container.appendChild(img);
 }
 
 /* ---------- fotos (IndexedDB) ---------- */
@@ -434,12 +567,13 @@ function marcaAgua(){
 function printReceipt(it){
   const t = totals(it), r = $("receipt"); r.innerHTML = ""; r.className = "";
   r.appendChild(marcaAgua());
+  addLogo(r);
   const add = (tag, cls, txt) => { const e = el(tag, cls, txt); r.appendChild(e); return e; };
   add("h1","", biz.name || "Recibo de reparación");
   if(biz.tel) add("p","", "Tel. " + biz.tel);
   add("h2","", "Recibo de reparación " + ord(it.orden));
   add("p","", "Fecha de ingreso: " + new Date(it.fecha).toLocaleDateString("es-EC",{day:"2-digit",month:"long",year:"numeric"}) + " · Estado: " + est(it.estado).t);
-  const info = [["Cliente",it.cliente],["Teléfono",it.tel],["Equipo",it.equipo],["Serie / IMEI",it.serie],["Accesorios recibidos",it.accesorios],["Falla reportada",it.falla],["Trabajo realizado",it.notas],["Repuestos usados",it.repuestos],["Entrega estimada",it.fechaEst ? fdateStr(it.fechaEst) : ""],["Forma de pago",it.pago]].filter(x => x[1]);
+  const info = [["Cliente",it.cliente],["Teléfono",it.tel],["Cédula / RUC",it.cedula],["Recibido por",it.tecnico],["Equipo",it.equipo],["Serie / IMEI",it.serie],["Accesorios recibidos",it.accesorios],["Falla reportada",it.falla],["Trabajo realizado",it.notas],["Repuestos usados",it.repuestos],["Entrega estimada",it.fechaEst ? fdateStr(it.fechaEst) : ""],["Forma de pago",it.pago]].filter(x => x[1]);
   const tb = document.createElement("table");
   info.forEach(([k,v]) => { const tr = tb.insertRow(); tr.insertCell().textContent = k; tr.insertCell().textContent = v; });
   r.appendChild(tb);
@@ -463,12 +597,13 @@ function printIntake(it){
     if(n) r.appendChild(el("div","r-cut","✂ cortar aquí"));
     const copy = el("section","r-copy"); r.appendChild(copy);
     copy.appendChild(marcaAgua());
+    addLogo(copy);
     const add = (tag, cls, txt) => { const e = el(tag, cls, txt); copy.appendChild(e); return e; };
     add("h1","", biz.name || "Comprobante de ingreso");
     if(biz.tel) add("p","", "Tel. " + biz.tel);
     add("h2","", "Comprobante de ingreso " + ord(it.orden) + " · " + label);
     add("p","", "Fecha de ingreso: " + new Date(it.fecha).toLocaleString("es-EC",{day:"2-digit",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit"}));
-    const info = [["Cliente",it.cliente],["Teléfono",it.tel],["Equipo",it.equipo],["Serie / IMEI",it.serie],["Características",it.caract],["Estado físico al recibirlo",it.estadoFis],["Accesorios recibidos",it.accesorios],["Falla reportada",it.falla],["Entrega estimada",it.fechaEst ? fdateStr(it.fechaEst) : ""],["Abono recibido",it.abono ? money(it.abono) : ""]].filter(x => x[1]);
+    const info = [["Cliente",it.cliente],["Teléfono",it.tel],["Cédula / RUC",it.cedula],["Recibido por",it.tecnico],["Equipo",it.equipo],["Serie / IMEI",it.serie],["Características",it.caract],["Estado físico al recibirlo",it.estadoFis],["Accesorios recibidos",it.accesorios],["Falla reportada",it.falla],["Entrega estimada",it.fechaEst ? fdateStr(it.fechaEst) : ""],["Abono recibido",it.abono ? money(it.abono) : ""]].filter(x => x[1]);
     const tb = document.createElement("table");
     info.forEach(([k,v]) => { const tr = tb.insertRow(); tr.insertCell().textContent = k; tr.insertCell().textContent = v; });
     copy.appendChild(tb);
@@ -553,7 +688,7 @@ function render(){
     const top = el("div","row");
     top.append(el("h3","",it.equipo || "Equipo sin nombre"), el("span","badge",e.t));
     card.appendChild(top);
-    card.appendChild(el("div","meta", ord(it.orden) + " · " + (it.cliente||"Sin cliente") + (it.tel ? " · " + it.tel : "") + " · " + fdate(it.fecha)));
+    card.appendChild(el("div","meta", ord(it.orden) + " · " + (it.cliente||"Sin cliente") + (it.tel ? " · " + it.tel : "") + " · " + fdate(it.fecha) + (it.tecnico ? " · Recibió: " + it.tecnico : "")));
     if(it.falla) card.appendChild(el("p","","Falla: " + it.falla));
     if(it.notas) card.appendChild(el("p","","Trabajo: " + it.notas));
     if(it.repuestos) card.appendChild(el("p","","Repuestos: " + it.repuestos));
@@ -646,6 +781,12 @@ function openForm(id){
   $("fAbono").value = it.abono||""; $("fGarantia").value = it.garantia||""; $("fAccesorios").value = it.accesorios||"";
   $("fFecha").value = it.fechaEst||""; $("fIva").checked = !!it.iva; $("fPago").value = it.pago||"";
   $("fSerie").value = it.serie||""; $("fCaract").value = it.caract||""; $("fEstadoFis").value = it.estadoFis||"";
+  $("fCedula").value = it.cedula||"";
+  const tsel = $("fTecnico");
+  if(it.tecnico && ![...tsel.options].some(o => o.value===it.tecnico)){
+    const o = document.createElement("option"); o.value = it.tecnico; o.textContent = it.tecnico; tsel.appendChild(o);
+  }
+  tsel.value = it.tecnico||"";
   renderFormFotos();
   $("dlg").showModal();
 }
@@ -656,7 +797,8 @@ function saveForm(){
     repuestos:$("fRepuestos").value.trim(), costoRep:parseFloat($("fCostoRep").value)||0, mano:parseFloat($("fMano").value)||0,
     abono:parseFloat($("fAbono").value)||0, garantia:parseInt($("fGarantia").value)||0, accesorios:$("fAccesorios").value.trim(),
     fechaEst:$("fFecha").value, iva:$("fIva").checked, pago:$("fPago").value, fotos:formFotos.slice(),
-    serie:$("fSerie").value.trim(), caract:$("fCaract").value.trim(), estadoFis:$("fEstadoFis").value.trim()
+    serie:$("fSerie").value.trim(), caract:$("fCaract").value.trim(), estadoFis:$("fEstadoFis").value.trim(),
+    cedula:$("fCedula").value.trim(), tecnico:$("fTecnico").value
   };
   const estado = $("fEstado").value;
   if(!data.equipo && !data.cliente){ $("fEquipo").focus(); return; }
@@ -671,7 +813,8 @@ function saveForm(){
   }
   removedFotos.forEach(delFoto);
   formSaved = true; addedFotos = []; removedFotos = [];
-  save(); $("dlg").close(); render();
+  upsertCliente(data.cliente, data.cedula, data.tel);
+  save(); saveSettings(); $("dlg").close(); render();
   if(justCreated){
     const c = justCreated; justCreated = null;
     setTimeout(() => {
@@ -686,7 +829,7 @@ function saveForm(){
 async function exportFile(){
   let fotos = {};
   try { fotos = await allFotos(); } catch(e){}
-  const data = {app:"reparaciones", v:2, fecha:new Date().toISOString(), items, ivaRate, biz, fotos};
+  const data = {app:"reparaciones", v:3, fecha:new Date().toISOString(), items, ivaRate, biz, tecnicos, clientes, fotos};
   const blob = new Blob([JSON.stringify(data)], {type:"application/json"});
   const name = "respaldo-reparaciones-" + todayStr() + ".json";
   try {
@@ -702,7 +845,7 @@ async function exportFile(){
   markBackup(); $("msg").textContent = "Respaldo descargado: " + name;
 }
 async function copyBackupText(){
-  const txt = JSON.stringify({app:"reparaciones", v:2, items, ivaRate, biz});
+  const txt = JSON.stringify({app:"reparaciones", v:3, items, ivaRate, biz, tecnicos, clientes});
   try { await navigator.clipboard.writeText(txt); markBackup(); $("msg").textContent = "Respaldo en texto copiado (sin fotos). Para guardar también las fotos usa Descargar respaldo."; }
   catch(e){ $("importTxt").value = txt; $("dlgImport").showModal(); $("importTxt").select(); $("msg").textContent = "Copia el texto manualmente."; }
 }
@@ -714,13 +857,16 @@ async function restoreFromText(txt){
   items = arr.filter(x => x && typeof x==="object" && x.id && x.fecha);
   if(!Array.isArray(data)){
     if(isFinite(data.ivaRate)) ivaRate = data.ivaRate;
-    if(data.biz && typeof data.biz==="object") biz = {name:String(data.biz.name||""), tel:String(data.biz.tel||""), terms:String(data.biz.terms||"")};
+    if(data.biz && typeof data.biz==="object") biz = {name:String(data.biz.name||""), tel:String(data.biz.tel||""), terms:String(data.biz.terms||""), logo:String(data.biz.logo||"")};
+    if(Array.isArray(data.tecnicos)) tecnicos = data.tecnicos.map(String);
+    if(Array.isArray(data.clientes)) clientes = data.clientes.filter(x => x && typeof x==="object").map(x => ({nombre:String(x.nombre||""), cedula:String(x.cedula||""), tel:String(x.tel||"")}));
     if(data.fotos && typeof data.fotos==="object"){
       try { await clearFotos(); for(const k of Object.keys(data.fotos)) await putFoto(k, data.fotos[k]); } catch(e){}
     }
   }
   fixOrdenes(); save(); saveSettings();
   $("ivaInput").value = ivaRate; $("bizName").value = biz.name||""; $("bizTel").value = biz.tel||""; $("bizTerms").value = biz.terms||"";
+  renderTecs(); renderClientes(); renderLogoPrev();
   $("dlgImport").close(); render();
   $("msg").textContent = "Respaldo restaurado: " + items.length + " registros.";
 }
@@ -797,11 +943,26 @@ $("importBtn").onclick = () => { $("importTxt").value = ""; $("impFile").value =
 $("impCancel").onclick = () => $("dlgImport").close();
 $("impFile").onchange = e => { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = () => { $("importTxt").value = r.result; }; r.readAsText(f); };
 $("impOk").onclick = () => { const t = $("importTxt").value.trim(); if(!t){ $("msg").textContent = "Elige un archivo o pega el texto del respaldo."; return; } restoreFromText(t); };
-$("bizName").oninput = $("bizTel").oninput = $("bizTerms").oninput = () => { biz = {name:$("bizName").value.trim(), tel:$("bizTel").value.trim(), terms:$("bizTerms").value.trim()}; saveSettings(); };
+$("bizName").oninput = $("bizTel").oninput = $("bizTerms").oninput = () => { biz = {name:$("bizName").value.trim(), tel:$("bizTel").value.trim(), terms:$("bizTerms").value.trim(), logo:biz.logo||""}; saveSettings(); renderLogoPrev(); };
 $("ivaInput").oninput = () => { ivaRate = parseFloat($("ivaInput").value)||0; saveSettings(); };
+$("tecAdd").onclick = addTec;
+$("tecInput").addEventListener("keydown", e => { if(e.key==="Enter"){ e.preventDefault(); addTec(); } });
+$("fCliente").oninput = fillFromCliente;
+$("fCedula").oninput = fillFromCedula;
+$("logoBtn").onclick = () => $("logoInput").click();
+$("logoDel").onclick = () => { biz.logo = ""; saveSettings(); renderLogoPrev(); $("msg").textContent = "Logotipo quitado."; };
+$("logoInput").onchange = async e => { const f = e.target.files[0]; e.target.value = ""; if(!f) return;
+  try { biz.logo = await compressLogo(f); saveSettings(); renderLogoPrev(); $("msg").textContent = "Logotipo actualizado."; }
+  catch(err){ $("msg").textContent = "No se pudo cargar esa imagen de logo."; } };
 
 load(); fixOrdenes();
 $("bizName").value = biz.name||""; $("bizTel").value = biz.tel||""; $("bizTerms").value = biz.terms||""; $("ivaInput").value = ivaRate;
+if(!clientes.length){
+  let added = false; const seen = {};
+  items.forEach(i => { const n = (i.cliente||"").trim(); if(n && !seen[n.toLowerCase()]){ seen[n.toLowerCase()] = 1; clientes.push({nombre:n, cedula:i.cedula||"", tel:i.tel||""}); added = true; } });
+  if(added) saveSettings();
+}
+renderTecs(); renderClientes(); renderLogoPrev();
 buildFilters(); render(); showLastBk();
 if(!storageOK) $("msg").textContent = "Este navegador no permite guardar datos. Descarga un respaldo antes de salir.";
 </script>
