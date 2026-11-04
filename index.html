@@ -188,6 +188,13 @@ label span{display:block;font-size:.88rem;color:var(--muted);margin-bottom:3px;f
   <label><span>Condiciones que salen al pie del comprobante de ingreso (opcional)</span><textarea id="bizTerms" placeholder="Si lo dejas vacío se usa un texto básico."></textarea></label>
   <label style="max-width:240px"><span>IVA para reparaciones nuevas (%)</span><input id="ivaInput" type="number" inputmode="decimal" min="0" max="100" step="any"></label>
   <div style="margin-top:16px;margin-bottom:10px">
+    <label style="display:flex;gap:8px;align-items:center;margin-bottom:4px"><input id="waAutoChk" type="checkbox" style="width:auto"> <span>Al marcar un equipo como LISTO, preparar solo el aviso de WhatsApp al cliente (con lo que se le hizo, total y saldo)</span></label>
+    <label><span>Mensajes de WhatsApp (plantillas; puedes cambiar el texto de cada aviso)</span></label>
+    <label><span>Plantilla aviso LISTO</span><textarea id="tplListo" style="min-height:90px"></textarea></label>
+    <button id="tplSave" type="button">Guardar plantilla</button>
+    <button id="tplReset" type="button">Volver a la plantilla original</button>
+  </div>
+  <div style="margin-top:16px;margin-bottom:10px">
     <label><span>Técnicos del taller (en la ficha eliges quién recibió el equipo; aquí puedes quitar o agregar nombres)</span></label>
     <div style="display:flex;gap:8px;align-items:flex-start">
       <input id="tecInput" placeholder="Nombre del técnico (ej. Juan); pulsa Agregar o Enter" autocomplete="off">
@@ -300,6 +307,17 @@ label span{display:block;font-size:.88rem;color:var(--muted);margin-bottom:3px;f
   <div class="foot"><button id="fotoClose" type="button">Cerrar</button></div>
 </dialog>
 
+<dialog id="dlgWa">
+  <h2>Aviso por WhatsApp</h2>
+  <p id="waDest" style="margin-top:0;color:var(--muted)"></p>
+  <label><span>Mensaje (puedes editarlo antes de enviar)</span><textarea id="waTxt" style="min-height:170px"></textarea></label>
+  <div class="foot">
+    <button id="waClose" type="button">Cerrar</button>
+    <button id="waCopy" type="button">Copiar texto</button>
+    <button id="waGo" class="primary" type="button">Abrir WhatsApp y enviar</button>
+  </div>
+</dialog>
+
 <dialog id="dlgRep">
   <h2>Reportes</h2>
   <label><span>Mes</span><select id="repMonth"></select></label>
@@ -324,6 +342,53 @@ let ivaRate = 15, biz = {name:"", tel:""};
 let clientes = [], tecnicos = [];
 let cloud = {token:"", gist:"", equipo:""};
 let formFotos = [], addedFotos = [], removedFotos = [], formSaved = false, justCreated = null;
+
+/* ---------- mensajes de WhatsApp (plantillas) ---------- */
+const TPL_KEY = KEY + "-wa-tpl";
+const TPL_DEF = {
+  recibido: "Hola [cliente], le escribimos de [negocio]. Su equipo [equipo] quedó registrado como [orden].\nFalla declarada: [falla]\nFecha estimada de entrega: [fechaEntrega].\nLe avisamos por este medio cuando esté listo.",
+  proceso: "Hola [cliente], su equipo [equipo] ([orden]) ya está en reparación. Le avisamos apenas quede listo.",
+  repuesto: "Hola [cliente], su equipo [equipo] ([orden]) está en espera de un repuesto. Lo avisaremos apenas esté terminado.",
+  listo: "¡Buenas, [cliente]! Su [equipo] ya está REPARADO y listo para retirar ✅\nTrabajo realizado: [trabajo]\nRepuestos usados: [repuestos]\nTotal: [total][ab]/[saldo]\nGarantía: [garantia] (válida hasta [fechaGarantia]).\nLe esperamos. Atte. [negocio]",
+  entregado: "Hola [cliente], gracias por confiar en [negocio]. Su [equipo] fue entregado hoy; su garantía de [garantia] va hasta [fechaGarantia]. Si vuelve a presentar el mismo problema, escríbanos con el número de orden [orden]."
+};
+let waTpl = Object.assign({}, TPL_DEF);
+function loadTpl(){
+  try {
+    const r = localStorage.getItem(TPL_KEY);
+    if(r){ const o = JSON.parse(r); for(const k in TPL_DEF){ if(typeof o[k]==="string" && o[k].trim()) waTpl[k] = o[k]; } }
+  } catch(e){}
+}
+function saveTpl(){ try { localStorage.setItem(TPL_KEY, JSON.stringify(waTpl)); } catch(e){} }
+function tplVars(it){
+  const t = totals(it);
+  const gd = parseInt(it.garantia,10)||0;
+  const base = it.listoEn || it.entregado || new Date().toISOString();
+  const fg = gd ? new Date(new Date(base).getTime() + gd*864e5) : null;
+  return {
+    cliente: it.cliente || "",
+    equipo: it.equipo || "",
+    orden: ord(it.orden),
+    falla: it.falla || "",
+    trabajo: it.notas || "",
+    repuestos: it.repuestos || "",
+    total: money(t.total),
+    ab: it.abono ? " (de ello " + money(it.abono) + " ya abonados)" : "",
+    saldo: t.saldo > 0 ? " Saldo pendiente: " + money(t.saldo) : "",
+    garantia: gd ? gd + " días" : "",
+    fechaIngreso: it.fecha ? new Date(it.fecha).toLocaleDateString("es-EC",{day:"2-digit",month:"2-digit",year:"numeric"}) : "",
+    fechaEntrega: it.fechaEst ? new Date(it.fechaEst+"T00:00:00").toLocaleDateString("es-EC",{day:"2-digit",month:"2-digit"}) : "",
+    fechaGarantia: fg ? fg.toLocaleDateString("es-EC",{day:"2-digit",month:"2-digit",year:"numeric"}) : "",
+    tecnico: it.tecnico || "",
+    pago: it.pago || "",
+    negocio: biz.name || "el taller"
+  };
+}
+function fillTpl(k, it){
+  const v = tplVars(it);
+  let m = (waTpl[k] || TPL_DEF[k] || "").replace(/\[([a-zA-Z]+)\]/g, (s, name) => (v[name] !== undefined ? v[name] : "[" + name + "]"));
+  return m.replace(/\n{3,}/g, "\n\n").trim();
+}
 
 function el(tag, cls, text){ const e = document.createElement(tag); if(cls) e.className = cls; if(text!==undefined) e.textContent = text; return e; }
 const money = n => "$" + (Math.round((n||0)*100)/100).toLocaleString("es-EC",{minimumFractionDigits:0,maximumFractionDigits:2});
@@ -833,22 +898,32 @@ function waPhone(tel){
   return d.length >= 10 ? d : "";
 }
 function waMessage(it){
-  const t = totals(it);
-  if(it.estado==="listo"){
-    let m = "Hola" + (it.cliente ? " " + it.cliente : "") + ", le escribimos de " + (biz.name || "el taller") + ". Su equipo " + (it.equipo || "") + " (" + ord(it.orden) + ") ya está listo para retirar.";
-    if(t.saldo > 0) m += " Saldo pendiente: " + money(t.saldo) + ".";
-    if(it.garantia) m += " Incluye garantía de " + it.garantia + " días.";
-    return m;
-  }
+  const k = it.estado;
+  if(k && waTpl[k]) return fillTpl(k, it);
   return quoteText(it);
 }
-function openWhatsApp(it){
+let waItem = null;
+function openWaDialog(it){
+  waItem = it;
   const ph = waPhone(it.tel);
-  if(!ph){ $("msg").textContent = "Esta reparación no tiene un teléfono válido. Edítala y agrégalo."; return; }
+  $("waDest").textContent = "Para: " + (ph ? "+" + ph : "(sin teléfono válido: copia el texto o edita la reparación y agrégalo)") + " · " + ord(it.orden) + (it.cliente ? " · " + it.cliente : "") + " · " + est(it.estado).t;
+  $("waTxt").value = waMessage(it);
+  $("dlgWa").showModal();
+}
+function openWhatsApp(it){ openWaDialog(it); }
+function waSendNow(){
+  if(!waItem) return;
+  const ph = waPhone(waItem.tel);
+  if(!ph){
+    try { navigator.clipboard.writeText($("waTxt").value); $("msg").textContent = "Sin teléfono válido: texto copiado, pégalo en WhatsApp."; } catch(e){ $("msg").textContent = "Esta reparación no tiene un teléfono válido. Edítala y agrégalo."; }
+    $("dlgWa").close(); return;
+  }
   const a = document.createElement("a");
-  a.href = "https://wa.me/" + ph + "?text=" + encodeURIComponent(waMessage(it));
+  a.href = "https://wa.me/" + ph + "?text=" + encodeURIComponent($("waTxt").value);
   a.target = "_blank"; a.rel = "noopener";
   document.body.appendChild(a); a.click(); a.remove();
+  $("dlgWa").close();
+  $("msg").textContent = "WhatsApp abierto con el mensaje listo. Solo toca enviar.";
 }
 
 /* ---------- recibo ---------- */
@@ -959,6 +1034,16 @@ function setEstado(it, k){
   if(k!=="entregado") delete it.entregado;
   if(k==="listo" && was!=="listo") it.listoEn = new Date().toISOString();
 }
+let waAuto = true;
+function waAutoLoad(){ try{ const v = localStorage.getItem(KEY+"-waauto"); if(v!==null) waAuto = v === "1"; }catch(e){} }
+function pasEstado(it, k, idx){
+  setEstado(it, k); save(); render();
+  if(k==="listo"){ // aviso automático al cliente al quedar reparado
+    if(!waAuto) $("msg").textContent = "Marcado como LISTO. Toca el botón WhatsApp si quieres avisarle al cliente.";
+    else if(waPhone(it.tel)) openWaDialog(it);
+    else $("msg").textContent = "Marcado como LISTO. Este cliente no tiene teléfono válido (edítalo en la ficha), así que no se pudo preparar el aviso de WhatsApp.";
+  }
+}
 function render(){
   const month = monthKey(new Date().toISOString());
   $("stActive").textContent = items.filter(i=>i.estado!=="entregado").length;
@@ -1009,7 +1094,7 @@ function render(){
     const idx = ESTADOS.findIndex(x=>x.k===it.estado);
     if(idx < ESTADOS.length-1){
       const nb = el("button","primary","Pasar a " + ESTADOS[idx+1].t.toLowerCase()); nb.type = "button";
-      nb.onclick = () => { setEstado(it, ESTADOS[idx+1].k); save(); render(); };
+      nb.onclick = () => { pasEstado(it, ESTADOS[idx+1].k, idx+1); };
       act.appendChild(nb);
     }
     const wb = el("button","","WhatsApp"); wb.type = "button"; wb.onclick = () => openWhatsApp(it);
@@ -1251,6 +1336,12 @@ $("cloudToken").oninput = $("cloudGist").oninput = $("cloudEquipo").oninput = ()
 $("cloudOn").onclick = () => { if(cloudUpload(false)) {} };
 $("cloudGet").onclick = cloudDownload;
 $("cloudOff").onclick = () => { cloud = {token:"", gist:"", equipo:$("cloudEquipo").value.trim()}; cloudSave(); cloudStatus(); $("msg").textContent = "Nube desconectada; tus datos locales no se tocan."; };
+$("waAutoChk").onchange = () => { waAuto = !!$("waAutoChk").checked; try{ localStorage.setItem(KEY+"-waauto", waAuto ? "1" : "0"); }catch(e){} };
+$("tplSave").onclick = () => { waTpl.listo = $("tplListo").value.trim() || TPL_DEF.listo; saveTpl(); $("msg").textContent = "Plantilla del aviso LISTO guardada."; };
+$("tplReset").onclick = () => { waTpl.listo = TPL_DEF.listo; saveTpl(); $("tplListo").value = TPL_DEF.listo; $("msg").textContent = "Plantilla del aviso LISTO restaurada."; };
+$("waClose").onclick = () => $("dlgWa").close();
+$("waCopy").onclick = () => { try { navigator.clipboard.writeText($("waTxt").value); $("msg").textContent = "Mensaje copiado. Pégalo en WhatsApp."; } catch(e){ $("waTxt").select(); $("msg").textContent = "Selecciona y copia el texto manualmente."; } };
+$("waGo").onclick = waSendNow;
 $("driveClient").oninput = () => { drive.clientId = $("driveClient").value.trim(); driveSave(); driveStatus(); };
 $("driveConnect").onclick = async () => {
   const ok = await driveAuth(false);
@@ -1268,6 +1359,10 @@ if(driveNet()){
 }
 
 load(); fixOrdenes();
+waAutoLoad();
+loadTpl();
+$("waAutoChk").checked = waAuto;
+$("tplListo").value = waTpl.listo || TPL_DEF.listo;
 $("bizName").value = biz.name||""; $("bizTel").value = biz.tel||""; $("bizTerms").value = biz.terms||""; $("ivaInput").value = ivaRate;
 if(!clientes.length){
   let added = false; const seen = {};
